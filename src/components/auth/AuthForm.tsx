@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 interface AuthFormProps {
   isLogin: boolean;
   onSubmit: (formData: any) => void;
+  prefilledEmail?: string;
 }
 
-const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
+const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '' }: AuthFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,6 +21,16 @@ const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     password: '',
     confirmPassword: ''
   });
+
+  // 이메일 인증 후 이메일 미리 채우기
+  useEffect(() => {
+    if (prefilledEmail) {
+      setFormData(prev => ({
+        ...prev,
+        email: prefilledEmail
+      }));
+    }
+  }, [prefilledEmail]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -75,6 +86,7 @@ const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
             value={formData.email}
             onChange={handleInputChange}
             className="pl-10"
+            disabled={!!prefilledEmail && !isLogin}
             required
           />
         </div>
