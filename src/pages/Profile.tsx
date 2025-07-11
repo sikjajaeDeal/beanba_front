@@ -1,0 +1,97 @@
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, MapPin, User, Settings, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+import Header from '@/components/Header';
+
+const Profile = () => {
+  const { memberInfo, logout } = useAuth();
+
+  if (!memberInfo) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+        <Header />
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <p className="text-center text-gray-500">로그인이 필요합니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/';
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <Header />
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="flex items-center mb-6">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="mr-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              홈으로
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">내 프로필</h1>
+        </div>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className="bg-green-100 text-green-700 text-xl">
+                  {memberInfo.nickname.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-xl font-bold">{memberInfo.nickname}</h2>
+                <p className="text-gray-500">@{memberInfo.memberId}</p>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <User className="h-5 w-5 text-gray-400" />
+              <span>{memberInfo.email}</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <MapPin className="h-5 w-5 text-gray-400" />
+              <span>위치: ({memberInfo.latitude}, {memberInfo.longitude})</span>
+            </div>
+            <div className="pt-4 border-t">
+              <p className="text-sm text-gray-500">
+                역할: {memberInfo.role} | 가입방식: {memberInfo.provider === 'R' ? '일반 회원가입' : '소셜 로그인'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-3">
+          <Link to="/profile/settings">
+            <Button variant="outline" className="w-full justify-start">
+              <Settings className="h-4 w-4 mr-3" />
+              개인정보 수정
+            </Button>
+          </Link>
+          
+          <Button 
+            variant="outline" 
+            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-3" />
+            로그아웃
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Profile;

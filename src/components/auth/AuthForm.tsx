@@ -1,19 +1,22 @@
-
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthFormProps {
   isLogin: boolean;
   onSubmit: (formData: any) => void;
   prefilledEmail?: string;
+  onClose: () => void;
 }
 
-const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '' }: AuthFormProps) => {
+const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     userId: '',
     email: '',
@@ -21,6 +24,9 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '' }: AuthFormProps) => 
     password: '',
     confirmPassword: ''
   });
+  
+  const { login } = useAuth();
+  const { toast } = useToast();
 
   // 이메일 인증 후 이메일 미리 채우기
   useEffect(() => {
@@ -39,23 +45,67 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '' }: AuthFormProps) => 
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    if (!isLogin) {
-      // 회원가입 시 비밀번호 확인 검증
-      if (formData.password !== formData.confirmPassword) {
-        alert('비밀번호가 일치하지 않습니다.');
-        return;
+    try {
+      if (isLogin) {
+        // 로그인 처리
+        await login(formData.userId, formData.password);
+        toast({
+          title: "로그인 성공",
+          description: "환영합니다!",
+        });
+        onClose();
+      } else {
+        // 회원가입 처리
+        if (formData.password !== formData.confirmPassword) {
+          toast({
+            title: "오류",
+            description: "비밀번호가 일치하지 않습니다.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // TODO: Backend integration - signup API call
+        console.log('Signup data:', formData);
+        onSubmit(formData);
       }
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: error instanceof Error ? error.message : "요청 처리 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    onSubmit(formData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {!isLogin && (
+        <div className="space-y-2">
+          <Label htmlFor="userId">아이디</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <Input
+              id="userId"
+              name="userId"
+              type="text"
+              placeholder="아이디를 입력하세요"
+              value={formData.userId}
+              onChange={handleInputChange}
+              className="pl-10"
+              required
+            />
+          </div>
+        </div>
+      )}
+
+      {isLogin && (
         <div className="space-y-2">
           <Label htmlFor="userId">아이디</Label>
           <div className="relative">
@@ -164,8 +214,9 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '' }: AuthFormProps) => 
       <Button
         type="submit"
         className="w-full bg-green-600 hover:bg-green-700 text-white"
+        disabled={isLoading}
       >
-        {isLogin ? '로그인' : '회원가입'}
+        {isLoading ? '처리 중...' : (isLogin ? '로그인' : '회원가입')}
       </Button>
     </form>
   );

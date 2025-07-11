@@ -1,11 +1,12 @@
-
 import React, { useState } from 'react';
 import { Search, Menu, User, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from 'react-router-dom';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import AuthModal from './AuthModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SearchResult {
   id: number;
@@ -32,9 +33,17 @@ const Header = () => {
     { id: 4, name: '제주 감귤', category: '과일', price: 25000, image: '/placeholder.svg' },
     { id: 5, name: '무료 나눔 배추', category: '채소', price: 0, image: '/placeholder.svg' },
   ];
+  
+  const { isLoggedIn, memberInfo, logout } = useAuth();
 
-  const handleLoginClick = () => {
-    setIsAuthModalOpen(true);
+  const formatPrice = (price: number) => {
+    if (price === 0) return '무료 나눔';
+    return `${price.toLocaleString()}원`;
+  };
+
+  const formatNumberInput = (value: string) => {
+    const number = value.replace(/[^0-9]/g, '');
+    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
   const handleMinPriceChange = (value: string) => {
@@ -63,14 +72,12 @@ const Header = () => {
     console.log('Search query:', value);
   };
 
-  const formatPrice = (price: number) => {
-    if (price === 0) return '무료 나눔';
-    return `${price.toLocaleString()}원`;
+  const handleLoginClick = () => {
+    setIsAuthModalOpen(true);
   };
 
-  const formatNumberInput = (value: string) => {
-    const number = value.replace(/[^0-9]/g, '');
-    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -93,15 +100,33 @@ const Header = () => {
 
             {/* User Actions */}
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="hidden sm:flex items-center space-x-2"
-                onClick={handleLoginClick}
-              >
-                <User className="h-4 w-4" />
-                <span>로그인</span>
-              </Button>
+              {isLoggedIn && memberInfo ? (
+                <div className="flex items-center space-x-3">
+                  <Link to="/profile">
+                    <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-green-100 text-green-700 text-xs">
+                          {memberInfo.nickname.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden sm:block">{memberInfo.nickname}</span>
+                    </Button>
+                  </Link>
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:block">
+                    로그아웃
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="hidden sm:flex items-center space-x-2"
+                  onClick={handleLoginClick}
+                >
+                  <User className="h-4 w-4" />
+                  <span>로그인</span>
+                </Button>
+              )}
               <Button variant="ghost" size="sm">
                 <ShoppingCart className="h-5 w-5" />
               </Button>

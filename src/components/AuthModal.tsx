@@ -92,6 +92,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   isLogin={currentStep === 'login'} 
                   onSubmit={handleSubmit}
                   prefilledEmail={verifiedEmail}
+                  onClose={onClose}
                 />
               </>
             )}
