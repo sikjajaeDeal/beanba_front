@@ -4,6 +4,8 @@ import { Mail, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { authService } from '@/services/authService';
 
 interface EmailVerificationProps {
   onVerified: (email: string) => void;
@@ -14,6 +16,7 @@ const EmailVerification = ({ onVerified }: EmailVerificationProps) => {
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -25,33 +28,51 @@ const EmailVerification = ({ onVerified }: EmailVerificationProps) => {
     return () => clearInterval(interval);
   }, [timeLeft]);
 
+  // 이메일 형식 검증
+  const validateEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
   const handleSendEmail = async () => {
-    if (!email) return;
+    if (!email) {
+      toast({
+        title: "오류",
+        description: "이메일을 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      toast({
+        title: "오류",
+        description: "올바른 이메일 형식을 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsLoading(true);
     
     try {
-      // TODO: 실제 이메일 전송 API 호출
-      const response = await fetch('/api/send-verification-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      // TODO: 백엔드 API 연동 - 이메일 인증 전송 API 호출
+      await authService.sendEmailVerification(email);
       
-      if (response.ok) {
-        setIsEmailSent(true);
-        setTimeLeft(180); // 3분 = 180초
-        console.log('이메일 전송 성공');
-      } else {
-        throw new Error('이메일 전송 실패');
-      }
-    } catch (error) {
-      console.error('이메일 전송 오류:', error);
-      // TODO: 실제 구현에서는 임시로 성공 처리
       setIsEmailSent(true);
-      setTimeLeft(180);
+      setTimeLeft(180); // 3분 = 180초
+      toast({
+        title: "성공",
+        description: "이메일 인증 메일을 전송했습니다.",
+      });
+      console.log('이메일 전송 성공');
+    } catch (error: any) {
+      console.error('이메일 전송 오류:', error);
+      toast({
+        title: "오류",
+        description: error.message || "이메일 전송 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -62,8 +83,9 @@ const EmailVerification = ({ onVerified }: EmailVerificationProps) => {
     handleSendEmail();
   };
 
-  const handleProceedToSignup = () => {
-    onVerified(email);
+  const handleEmailChange = () => {
+    setIsEmailSent(false);
+    setTimeLeft(0);
   };
 
   const formatTime = (seconds: number) => {
@@ -119,7 +141,7 @@ const EmailVerification = ({ onVerified }: EmailVerificationProps) => {
                 </p>
               </div>
               <p className="text-xs text-green-600 mt-1">
-                이메일을 확인하고 인증을 완료해주세요.
+                이메일을 확인하고 인증 링크를 클릭해주세요.
               </p>
             </div>
 
@@ -129,22 +151,24 @@ const EmailVerification = ({ onVerified }: EmailVerificationProps) => {
                 <span>재전송 가능 시간: {formatTime(timeLeft)}</span>
               </div>
             ) : (
-              <Button
-                onClick={handleResendEmail}
-                variant="outline"
-                className="w-full"
-                disabled={isLoading}
-              >
-                이메일 재전송
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  onClick={handleResendEmail}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  이메일 재전송
+                </Button>
+                <Button
+                  onClick={handleEmailChange}
+                  variant="ghost"
+                  className="w-full text-sm"
+                >
+                  다른 이메일로 변경
+                </Button>
+              </div>
             )}
-
-            <Button
-              onClick={handleProceedToSignup}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-            >
-              회원가입 계속하기
-            </Button>
           </div>
         )}
       </div>

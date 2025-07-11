@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,15 +29,15 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
   const { login } = useAuth();
   const { toast } = useToast();
 
-  // 이메일 인증 후 이메일 미리 채우기
+  // 이메일 인증 후 이메일 미리 채우기 (회원가입에서만)
   useEffect(() => {
-    if (prefilledEmail) {
+    if (prefilledEmail && !isLogin) {
       setFormData(prev => ({
         ...prev,
         email: prefilledEmail
       }));
     }
-  }, [prefilledEmail]);
+  }, [prefilledEmail, isLogin]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -51,7 +52,7 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
     
     try {
       if (isLogin) {
-        // 로그인 처리
+        // TODO: 백엔드 API 연동 - 로그인 처리
         await login(formData.userId, formData.password);
         toast({
           title: "로그인 성공",
@@ -69,7 +70,7 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
           return;
         }
         
-        // TODO: Backend integration - signup API call
+        // TODO: 백엔드 API 연동 - 회원가입 API 호출
         console.log('Signup data:', formData);
         onSubmit(formData);
       }
@@ -86,61 +87,43 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {!isLogin && (
-        <div className="space-y-2">
-          <Label htmlFor="userId">아이디</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-            <Input
-              id="userId"
-              name="userId"
-              type="text"
-              placeholder="아이디를 입력하세요"
-              value={formData.userId}
-              onChange={handleInputChange}
-              className="pl-10"
-              required
-            />
-          </div>
-        </div>
-      )}
-
-      {isLogin && (
-        <div className="space-y-2">
-          <Label htmlFor="userId">아이디</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-            <Input
-              id="userId"
-              name="userId"
-              type="text"
-              placeholder="아이디를 입력하세요"
-              value={formData.userId}
-              onChange={handleInputChange}
-              className="pl-10"
-              required
-            />
-          </div>
-        </div>
-      )}
-
       <div className="space-y-2">
-        <Label htmlFor="email">이메일</Label>
+        <Label htmlFor="userId">아이디</Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="이메일을 입력하세요"
-            value={formData.email}
+            id="userId"
+            name="userId"
+            type="text"
+            placeholder="아이디를 입력하세요"
+            value={formData.userId}
             onChange={handleInputChange}
             className="pl-10"
-            disabled={!!prefilledEmail && !isLogin}
             required
           />
         </div>
       </div>
+
+      {/* 이메일 입력은 회원가입에서만 표시 */}
+      {!isLogin && (
+        <div className="space-y-2">
+          <Label htmlFor="email">이메일</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="이메일을 입력하세요"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="pl-10"
+              disabled={!!prefilledEmail}
+              required
+            />
+          </div>
+        </div>
+      )}
 
       {!isLogin && (
         <div className="space-y-2">

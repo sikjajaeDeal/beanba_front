@@ -22,6 +22,7 @@ interface LoginResponse {
 
 export const authService = {
   async login(loginData: LoginRequest): Promise<LoginResponse> {
+    // TODO: 백엔드 API 연동 - 로그인 API 호출
     const response = await fetch('http://localhost:8080/api/auth/login', {
       method: 'POST',
       headers: {
@@ -35,6 +36,54 @@ export const authService = {
     }
 
     return response.json();
+  },
+
+  async logout(): Promise<void> {
+    const accessToken = this.getAccessToken();
+    
+    if (accessToken) {
+      try {
+        // TODO: 백엔드 API 연동 - 로그아웃 API 호출
+        const response = await fetch('http://localhost:8080/api/auth/logout', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          console.error('로그아웃 API 호출 실패');
+        }
+      } catch (error) {
+        console.error('로그아웃 API 오류:', error);
+      }
+    }
+
+    // TODO: 로컬 스토리지에서 토큰과 사용자 정보 제거 (매우 중요!)
+    this.clearStorage();
+  },
+
+  async sendEmailVerification(email: string): Promise<void> {
+    // TODO: 백엔드 API 연동 - 이메일 인증 전송 API 호출
+    const response = await fetch('http://localhost:8080/api/auth/signup/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (response.status === 409) {
+      // 이미 가입된 이메일
+      throw new Error('이미 가입된 이메일입니다.');
+    }
+
+    if (!response.ok) {
+      throw new Error('이메일 전송에 실패했습니다.');
+    }
+
+    // 성공 응답 처리 (raw body: "이메일 인증 메일을 전송했습니다.")
+    return;
   },
 
   saveTokens(accessToken: string, refreshToken: string) {
@@ -59,7 +108,8 @@ export const authService = {
     return memberInfo ? JSON.parse(memberInfo) : null;
   },
 
-  logout() {
+  clearStorage() {
+    // TODO: 로컬스토리지에서 모든 인증 관련 데이터 삭제
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('memberInfo');

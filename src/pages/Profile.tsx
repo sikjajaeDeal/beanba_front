@@ -1,7 +1,6 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, User, Settings, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MapPin, User, Settings, LogOut, Chrome } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -10,6 +9,7 @@ import Header from '@/components/Header';
 
 const Profile = () => {
   const { memberInfo, logout } = useAuth();
+  const navigate = useNavigate();
 
   if (!memberInfo) {
     return (
@@ -22,9 +22,40 @@ const Profile = () => {
     );
   }
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = '/';
+  const handleLogout = async () => {
+    try {
+      // TODO: 로그아웃 처리 후 홈으로 리다이렉트
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+      // 오류가 발생해도 홈으로 이동
+      navigate('/');
+    }
+  };
+
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case 'G':
+        return <Chrome className="h-4 w-4" />;
+      case 'K':
+        return <div className="h-4 w-4 bg-yellow-400 rounded-sm flex items-center justify-center text-xs font-bold">K</div>;
+      default:
+        return null;
+    }
+  };
+
+  const getProviderName = (provider: string) => {
+    switch (provider) {
+      case 'G':
+        return '구글';
+      case 'K':
+        return '카카오';
+      case 'R':
+        return '일반 회원가입';
+      default:
+        return '일반 회원가입';
+    }
   };
 
   return (
@@ -65,9 +96,11 @@ const Profile = () => {
               <span>위치: ({memberInfo.latitude}, {memberInfo.longitude})</span>
             </div>
             <div className="pt-4 border-t">
-              <p className="text-sm text-gray-500">
-                역할: {memberInfo.role} | 가입방식: {memberInfo.provider === 'R' ? '일반 회원가입' : '소셜 로그인'}
-              </p>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">가입방식:</span>
+                {getProviderIcon(memberInfo.provider)}
+                <span className="text-sm text-gray-500">{getProviderName(memberInfo.provider)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>

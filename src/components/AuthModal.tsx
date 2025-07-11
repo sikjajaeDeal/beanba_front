@@ -41,6 +41,22 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     }
   };
 
+  // 모달이 닫힐 때 상태 초기화 - 깜빡임 방지를 위해 약간의 지연 추가
+  const handleClose = () => {
+    // 현재 단계가 이메일 인증이면 즉시 로그인으로 변경하지 않고 바로 닫기
+    if (currentStep !== 'email-verification') {
+      setCurrentStep('login');
+      setVerifiedEmail('');
+    }
+    onClose();
+    
+    // 모달이 완전히 닫힌 후 상태 초기화
+    setTimeout(() => {
+      setCurrentStep('login');
+      setVerifiedEmail('');
+    }, 200);
+  };
+
   const getModalTitle = () => {
     switch (currentStep) {
       case 'login':
@@ -59,7 +75,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className={getMaxWidth()}>
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-bold text-green-700">
@@ -92,7 +108,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   isLogin={currentStep === 'login'} 
                   onSubmit={handleSubmit}
                   prefilledEmail={verifiedEmail}
-                  onClose={onClose}
+                  onClose={handleClose}
                 />
               </>
             )}

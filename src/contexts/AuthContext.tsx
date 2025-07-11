@@ -16,7 +16,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   memberInfo: MemberInfo | null;
   login: (memberId: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (memberId: string, password: string) => {
     try {
+      // TODO: 백엔드 API 연동 - 로그인 처리
       const response = await authService.login({ memberId, password });
       
       authService.saveTokens(response.accessToken, response.refreshToken);
@@ -59,10 +60,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setIsLoggedIn(false);
-    setMemberInfo(null);
+  const logout = async () => {
+    try {
+      // TODO: 백엔드 API 연동 - 로그아웃 처리
+      await authService.logout();
+    } catch (error) {
+      console.error('로그아웃 중 오류:', error);
+    } finally {
+      // TODO: 로그아웃 후 상태 초기화 (매우 중요!)
+      setIsLoggedIn(false);
+      setMemberInfo(null);
+    }
   };
 
   return (

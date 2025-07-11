@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Chrome } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,11 +16,12 @@ const ProfileSettings = () => {
   
   const [formData, setFormData] = useState({
     nickname: memberInfo?.nickname || '',
-    email: memberInfo?.email || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!memberInfo) {
     return (
@@ -40,7 +41,31 @@ const ProfileSettings = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case 'G':
+        return <Chrome className="h-4 w-4" />;
+      case 'K':
+        return <div className="h-4 w-4 bg-yellow-400 rounded-sm flex items-center justify-center text-xs font-bold">K</div>;
+      default:
+        return null;
+    }
+  };
+
+  const getProviderName = (provider: string) => {
+    switch (provider) {
+      case 'G':
+        return '구글';
+      case 'K':
+        return '카카오';
+      case 'R':
+        return '일반 회원가입';
+      default:
+        return '일반 회원가입';
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
@@ -52,13 +77,72 @@ const ProfileSettings = () => {
       return;
     }
 
-    // TODO: Backend integration - API call to update profile
-    console.log('Profile update data:', formData);
-    
-    toast({
-      title: "성공",
-      description: "프로필이 업데이트되었습니다.",
-    });
+    setIsLoading(true);
+
+    try {
+      // 변경된 필드만 포함하는 요청 바디 구성
+      const updateData: any = {};
+      
+      if (formData.nickname !== memberInfo.nickname) {
+        updateData.nickname = formData.nickname;
+      }
+      
+      if (formData.newPassword) {
+        if (!formData.currentPassword) {
+          toast({
+            title: "오류",
+            description: "현재 비밀번호를 입력해주세요.",
+            variant: "destructive"
+          });
+          return;
+        }
+        updateData.password = formData.newPassword;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        toast({
+          title: "알림",
+          description: "변경된 정보가 없습니다.",
+        });
+        return;
+      }
+
+      // TODO: 백엔드 API 연동 - 개인정보 수정 API 호출
+      const response = await fetch('http://localhost:8080/api/member/me', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "성공",
+          description: "프로필이 업데이트되었습니다.",
+        });
+        
+        // 비밀번호 필드 초기화
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      } else {
+        throw new Error('프로필 업데이트 실패');
+      }
+    } catch (error) {
+      console.error('프로필 업데이트 오류:', error);
+      toast({
+        title: "오류",
+        description: "프로필 업데이트 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -93,6 +177,17 @@ const ProfileSettings = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="email">이메일</Label>
+                <Input
+                  id="email"
+                  value={memberInfo.email}
+                  disabled
+                  className="bg-gray-100"
+                />
+                <p className="text-sm text-gray-500">이메일은 변경할 수 없습니다.</p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="nickname">닉네임</Label>
                 <Input
                   id="nickname"
@@ -104,65 +199,67 @@ const ProfileSettings = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="이메일을 입력하세요"
-                />
+                <Label>가입 방식</Label>
+                <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                  {getProviderIcon(memberInfo.provider)}
+                  <span className="text-sm">{getProviderName(memberInfo.provider)}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>비밀번호 변경</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">현재 비밀번호</Label>
-                <Input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  value={formData.currentPassword}
-                  onChange={handleInputChange}
-                  placeholder="현재 비밀번호를 입력하세요"
-                />
-              </div>
+          {memberInfo.provider === 'R' && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>비밀번호 변경</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">현재 비밀번호</Label>
+                  <Input
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    value={formData.currentPassword}
+                    onChange={handleInputChange}
+                    placeholder="현재 비밀번호를 입력하세요"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">새 비밀번호</Label>
-                <Input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  value={formData.newPassword}
-                  onChange={handleInputChange}
-                  placeholder="새 비밀번호를 입력하세요"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">새 비밀번호</Label>
+                  <Input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    value={formData.newPassword}
+                    onChange={handleInputChange}
+                    placeholder="새 비밀번호를 입력하세요"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  placeholder="새 비밀번호를 다시 입력하세요"
-                />
-              </div>
-            </CardContent>
-          </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    placeholder="새 비밀번호를 다시 입력하세요"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+          <Button 
+            type="submit" 
+            className="w-full bg-green-600 hover:bg-green-700"
+            disabled={isLoading}
+          >
             <Save className="h-4 w-4 mr-2" />
-            변경사항 저장
+            {isLoading ? '저장 중...' : '변경사항 저장'}
           </Button>
         </form>
       </div>
