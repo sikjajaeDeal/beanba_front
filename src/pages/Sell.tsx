@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -8,29 +9,89 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, Package, DollarSign } from 'lucide-react';
+import { salePostService, SalePostRequest } from '@/services/salePostService';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Sell = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { isLoggedIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  
   const [formData, setFormData] = useState({
-    productName: '',
-    category: '',
-    description: '',
-    quantity: '',
-    unit: '',
-    price: '',
-    location: '',
-    contactName: '',
-    contactPhone: '',
-    contactEmail: ''
+    title: '',
+    categoryPk: '',
+    content: '',
+    hopePrice: '',
+    latitude: '',
+    longitude: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedImages(files);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('상품 등록:', formData);
-    // 실제 구현 시 API 호출
+    
+    if (!isLoggedIn) {
+      toast({
+        title: '로그인 필요',
+        description: '상품 등록을 위해 로그인해주세요.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (selectedImages.length === 0) {
+      toast({
+        title: '이미지 필수',
+        description: '상품 이미지를 최소 1개 이상 업로드해주세요.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const salePostRequest: SalePostRequest = {
+        categoryPk: parseInt(formData.categoryPk),
+        title: formData.title,
+        content: formData.content,
+        hopePrice: parseInt(formData.hopePrice),
+        latitude: parseFloat(formData.latitude),
+        longitude: parseFloat(formData.longitude)
+      };
+
+      await salePostService.createSalePost(salePostRequest, selectedImages);
+
+      toast({
+        title: '등록 완료',
+        description: '상품이 성공적으로 등록되었습니다.',
+      });
+
+      // 등록 후 목록 페이지로 이동
+      navigate('/');
+      
+    } catch (error) {
+      toast({
+        title: '등록 실패',
+        description: error instanceof Error ? error.message : '상품 등록에 실패했습니다.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -104,156 +165,128 @@ const Sell = () => {
                 {/* Product Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="productName">상품명 *</Label>
+                    <Label htmlFor="title">상품명 *</Label>
                     <Input
-                      id="productName"
-                      value={formData.productName}
-                      onChange={(e) => handleInputChange('productName', e.target.value)}
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.target.value)}
                       placeholder="상품명을 입력하세요"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="category">카테고리 *</Label>
-                    <Select onValueChange={(value) => handleInputChange('category', value)}>
+                    <Label htmlFor="categoryPk">카테고리 *</Label>
+                    <Select onValueChange={(value) => handleInputChange('categoryPk', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="카테고리를 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="grains">곡물/잡곡</SelectItem>
-                        <SelectItem value="vegetables">채소류</SelectItem>
-                        <SelectItem value="meat">축산물</SelectItem>
-                        <SelectItem value="seafood">수산물</SelectItem>
-                        <SelectItem value="fruits">과일류</SelectItem>
-                        <SelectItem value="dairy">유제품</SelectItem>
+                        <SelectItem value="1">식자재</SelectItem>
+                        <SelectItem value="2">곡물/잡곡</SelectItem>
+                        <SelectItem value="3">채소류</SelectItem>
+                        <SelectItem value="4">축산물</SelectItem>
+                        <SelectItem value="5">수산물</SelectItem>
+                        <SelectItem value="6">과일류</SelectItem>
+                        <SelectItem value="7">유제품</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="description">상품 설명 *</Label>
+                  <Label htmlFor="content">상품 설명 *</Label>
                   <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => handleInputChange('content', e.target.value)}
                     placeholder="상품에 대한 자세한 설명을 입력하세요"
                     rows={4}
                     required
                   />
                 </div>
 
-                {/* Quantity and Price */}
+                {/* Price and Location */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <Label htmlFor="quantity">수량 *</Label>
+                    <Label htmlFor="hopePrice">희망 가격 (원) *</Label>
                     <Input
-                      id="quantity"
+                      id="hopePrice"
                       type="number"
-                      value={formData.quantity}
-                      onChange={(e) => handleInputChange('quantity', e.target.value)}
-                      placeholder="수량"
+                      value={formData.hopePrice}
+                      onChange={(e) => handleInputChange('hopePrice', e.target.value)}
+                      placeholder="희망 가격"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="unit">단위 *</Label>
-                    <Select onValueChange={(value) => handleInputChange('unit', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="단위 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="ton">톤</SelectItem>
-                        <SelectItem value="box">박스</SelectItem>
-                        <SelectItem value="piece">개</SelectItem>
-                        <SelectItem value="bundle">묶음</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="latitude">위도 *</Label>
+                    <Input
+                      id="latitude"
+                      type="number"
+                      step="any"
+                      value={formData.latitude}
+                      onChange={(e) => handleInputChange('latitude', e.target.value)}
+                      placeholder="예: 37.123456"
+                      required
+                    />
                   </div>
                   
                   <div>
-                    <Label htmlFor="price">가격 (원) *</Label>
+                    <Label htmlFor="longitude">경도 *</Label>
                     <Input
-                      id="price"
+                      id="longitude"
                       type="number"
-                      value={formData.price}
-                      onChange={(e) => handleInputChange('price', e.target.value)}
-                      placeholder="가격"
+                      step="any"
+                      value={formData.longitude}
+                      onChange={(e) => handleInputChange('longitude', e.target.value)}
+                      placeholder="예: 127.654321"
                       required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="location">생산지/소재지 *</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    placeholder="예: 경기도 이천시"
-                    required
-                  />
-                </div>
-
-                {/* Contact Information */}
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">연락처 정보</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <Label htmlFor="contactName">담당자명 *</Label>
-                      <Input
-                        id="contactName"
-                        value={formData.contactName}
-                        onChange={(e) => handleInputChange('contactName', e.target.value)}
-                        placeholder="담당자명"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="contactPhone">연락처 *</Label>
-                      <Input
-                        id="contactPhone"
-                        value={formData.contactPhone}
-                        onChange={(e) => handleInputChange('contactPhone', e.target.value)}
-                        placeholder="010-0000-0000"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="contactEmail">이메일</Label>
-                      <Input
-                        id="contactEmail"
-                        type="email"
-                        value={formData.contactEmail}
-                        onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                        placeholder="이메일 주소"
-                      />
-                    </div>
-                  </div>
-                </div>
 
                 {/* Image Upload */}
                 <div className="border-t pt-6">
-                  <Label>상품 이미지</Label>
+                  <Label>상품 이미지 *</Label>
                   <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-400 transition-colors">
                     <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-2">이미지를 드래그하거나 클릭하여 업로드</p>
+                    <p className="text-gray-600 mb-2">이미지를 선택하여 업로드</p>
                     <p className="text-sm text-gray-500">PNG, JPG 파일 (최대 5MB)</p>
-                    <Button type="button" variant="outline" className="mt-4">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="imageUpload"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => document.getElementById('imageUpload')?.click()}
+                    >
                       파일 선택
                     </Button>
+                    {selectedImages.length > 0 && (
+                      <p className="text-sm text-green-600 mt-2">
+                        {selectedImages.length}개 파일 선택됨
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex justify-center pt-6">
-                  <Button type="submit" size="lg" className="bg-green-600 hover:bg-green-700 px-12">
-                    상품 등록하기
+                  <Button 
+                    type="submit" 
+                    size="lg" 
+                    className="bg-green-600 hover:bg-green-700 px-12"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? '등록 중...' : '상품 등록하기'}
                   </Button>
                 </div>
               </form>

@@ -113,6 +113,13 @@ const Profile = () => {
             </Button>
           </Link>
           
+          <Link to="/liked-products">
+            <Button variant="outline" className="w-full justify-start">
+              <Settings className="h-4 w-4 mr-3" />
+              찜한 상품 보기
+            </Button>
+          </Link>
+          
           <Button 
             variant="outline" 
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"

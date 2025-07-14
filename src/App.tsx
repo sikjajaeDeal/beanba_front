@@ -7,8 +7,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Sell from "./pages/Sell";
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
 import ProfileSettings from "./pages/ProfileSettings";
+import LikedProducts from "./pages/LikedProducts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,9 +25,12 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/product/:postPk" element={<ProductDetail />} />
             <Route path="/sell" element={<Sell />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/settings" element={<ProfileSettings />} />
+            <Route path="/liked-products" element={<LikedProducts />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

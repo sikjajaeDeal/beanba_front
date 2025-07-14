@@ -93,7 +93,7 @@ const Header = () => {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-6">
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">상품 보기</a>
+              <Link to="/products" className="text-gray-700 hover:text-green-600 transition-colors">상품 보기</Link>
               <Link to="/sell" className="text-gray-700 hover:text-green-600 transition-colors">판매하기</Link>
               <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">고객센터</a>
             </nav>

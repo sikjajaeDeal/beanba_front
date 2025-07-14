@@ -15,6 +15,7 @@ interface MemberInfo {
 interface AuthContextType {
   isLoggedIn: boolean;
   memberInfo: MemberInfo | null;
+  user: MemberInfo | null; // user 별칭 추가
   login: (memberId: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateMemberInfo: () => Promise<void>;
@@ -89,7 +90,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, memberInfo, login, logout, updateMemberInfo }}>
+    <AuthContext.Provider value={{ isLoggedIn, memberInfo, user: memberInfo, login, logout, updateMemberInfo }}>
       {children}
     </AuthContext.Provider>
   );

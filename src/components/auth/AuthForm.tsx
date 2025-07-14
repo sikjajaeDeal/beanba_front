@@ -227,19 +227,6 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
               비밀번호 찾기
             </button>
           </div>
-          <div className="text-sm text-gray-500">
-            <span>계정이 없으신가요? </span>
-            <button
-              type="button"
-              className="text-green-600 hover:text-green-700"
-              onClick={() => {
-                // 이미 AuthModal에서 처리됨
-                console.log('새 계정 만들기 클릭');
-              }}
-            >
-              새 계정 만들기
-            </button>
-          </div>
         </div>
       )}
     </form>
