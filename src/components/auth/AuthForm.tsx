@@ -201,6 +201,47 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
       >
         {isLoading ? '처리 중...' : (isLogin ? '로그인' : '회원가입')}
       </Button>
+
+      {isLogin && (
+        <div className="space-y-2 text-center">
+          <div className="flex justify-center space-x-4 text-sm">
+            <button
+              type="button"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => {
+                // TODO: 백엔드 API 연동 - 아이디 찾기 기능
+                console.log('아이디 찾기 클릭');
+              }}
+            >
+              아이디 찾기
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => {
+                // TODO: 백엔드 API 연동 - 비밀번호 찾기 기능
+                console.log('비밀번호 찾기 클릭');
+              }}
+            >
+              비밀번호 찾기
+            </button>
+          </div>
+          <div className="text-sm text-gray-500">
+            <span>계정이 없으신가요? </span>
+            <button
+              type="button"
+              className="text-green-600 hover:text-green-700"
+              onClick={() => {
+                // 이미 AuthModal에서 처리됨
+                console.log('새 계정 만들기 클릭');
+              }}
+            >
+              새 계정 만들기
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

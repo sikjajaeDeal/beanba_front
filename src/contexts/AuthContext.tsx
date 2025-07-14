@@ -17,6 +17,7 @@ interface AuthContextType {
   memberInfo: MemberInfo | null;
   login: (memberId: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateMemberInfo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +37,8 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
+
+  console.log('AuthProvider initialized');
 
   useEffect(() => {
     const loggedIn = authService.isLoggedIn();
@@ -73,8 +76,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const updateMemberInfo = async () => {
+    try {
+      // TODO: 백엔드 API 연동 - 최신 회원 정보 조회
+      const updatedMemberInfo = await authService.getMemberInfoFromServer();
+      authService.saveMemberInfo(updatedMemberInfo);
+      setMemberInfo(updatedMemberInfo);
+    } catch (error) {
+      console.error('회원 정보 업데이트 오류:', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, memberInfo, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, memberInfo, login, logout, updateMemberInfo }}>
       {children}
     </AuthContext.Provider>
   );

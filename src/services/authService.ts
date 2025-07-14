@@ -108,6 +108,22 @@ export const authService = {
     return memberInfo ? JSON.parse(memberInfo) : null;
   },
 
+  async getMemberInfoFromServer(): Promise<MemberResponse> {
+    // TODO: 백엔드 API 연동 - 회원 정보 조회 API 호출
+    const response = await fetch('http://localhost:8080/api/member/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.getAccessToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('회원 정보 조회에 실패했습니다.');
+    }
+
+    return response.json();
+  },
+
   clearStorage() {
     // TODO: 로컬스토리지에서 모든 인증 관련 데이터 삭제
     localStorage.removeItem('accessToken');

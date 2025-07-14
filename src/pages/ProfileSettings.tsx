@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 
 const ProfileSettings = () => {
-  const { memberInfo } = useAuth();
+  const { memberInfo, updateMemberInfo } = useAuth();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -118,6 +118,9 @@ const ProfileSettings = () => {
       });
 
       if (response.ok) {
+        // TODO: 백엔드 API 연동 - 개인정보 수정 후 최신 정보 조회
+        await updateMemberInfo();
+        
         toast({
           title: "성공",
           description: "프로필이 업데이트되었습니다.",
