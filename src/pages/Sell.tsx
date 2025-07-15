@@ -25,8 +25,8 @@ const Sell = () => {
     categoryPk: '',
     content: '',
     hopePrice: '',
-    latitude: '',
-    longitude: ''
+    latitude: '37.123456', // 기본값 설정 (회원가입 정보에서 가져올 예정)
+    longitude: '127.654321' // 기본값 설정 (회원가입 정보에서 가져올 예정)
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -35,7 +35,7 @@ const Sell = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files);
+      const files = Array.from(e.target.files).slice(0, 4); // 최대 4개로 제한
       setSelectedImages(files);
     }
   };
@@ -206,54 +206,35 @@ const Sell = () => {
                   />
                 </div>
 
-                {/* Price and Location */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <Label htmlFor="hopePrice">희망 가격 (원) *</Label>
-                    <Input
-                      id="hopePrice"
-                      type="number"
-                      value={formData.hopePrice}
-                      onChange={(e) => handleInputChange('hopePrice', e.target.value)}
-                      placeholder="희망 가격"
-                      required
-                    />
+                {/* Price */}
+                <div>
+                  <Label htmlFor="hopePrice">희망 가격 (원) *</Label>
+                  <Input
+                    id="hopePrice"
+                    type="number"
+                    value={formData.hopePrice}
+                    onChange={(e) => handleInputChange('hopePrice', e.target.value)}
+                    placeholder="희망 가격"
+                    required
+                  />
+                </div>
+
+                {/* Map Section */}
+                <div>
+                  <Label>판매 위치</Label>
+                  <div className="mt-2 h-48 bg-gray-100 rounded-lg flex items-center justify-center border">
+                    <p className="text-gray-500">카카오맵이 여기에 표시됩니다</p>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="latitude">위도 *</Label>
-                    <Input
-                      id="latitude"
-                      type="number"
-                      step="any"
-                      value={formData.latitude}
-                      onChange={(e) => handleInputChange('latitude', e.target.value)}
-                      placeholder="예: 37.123456"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="longitude">경도 *</Label>
-                    <Input
-                      id="longitude"
-                      type="number"
-                      step="any"
-                      value={formData.longitude}
-                      onChange={(e) => handleInputChange('longitude', e.target.value)}
-                      placeholder="예: 127.654321"
-                      required
-                    />
-                  </div>
+                  <p className="text-sm text-gray-500 mt-2">회원가입 시 등록한 위치를 기반으로 지도가 표시됩니다.</p>
                 </div>
 
 
                 {/* Image Upload */}
                 <div className="border-t pt-6">
-                  <Label>상품 이미지 *</Label>
+                  <Label>상품 이미지 * (최대 4개)</Label>
                   <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-400 transition-colors">
                     <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-2">이미지를 선택하여 업로드</p>
+                    <p className="text-gray-600 mb-2">이미지를 선택하여 업로드 (최대 4개)</p>
                     <p className="text-sm text-gray-500">PNG, JPG 파일 (최대 5MB)</p>
                     <input
                       type="file"
@@ -266,15 +247,48 @@ const Sell = () => {
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="mt-4"
+                      className="mt-4 mr-2"
                       onClick={() => document.getElementById('imageUpload')?.click()}
                     >
                       파일 선택
                     </Button>
                     {selectedImages.length > 0 && (
-                      <p className="text-sm text-green-600 mt-2">
-                        {selectedImages.length}개 파일 선택됨
-                      </p>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={() => setSelectedImages([])}
+                      >
+                        전체 삭제
+                      </Button>
+                    )}
+                    {selectedImages.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-sm text-green-600 mb-2">
+                          {selectedImages.length}개 파일 선택됨 (최대 4개)
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {selectedImages.slice(0, 4).map((file, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-20 object-cover rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newImages = selectedImages.filter((_, i) => i !== index);
+                                  setSelectedImages(newImages);
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

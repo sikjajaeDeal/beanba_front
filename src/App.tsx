@@ -14,6 +14,7 @@ import ProfileSettings from "./pages/ProfileSettings";
 import LikedProducts from "./pages/LikedProducts";
 import MyPosts from "./pages/MyPosts";
 import NotFound from "./pages/NotFound";
+import ChatButton from "./components/chat/ChatButton";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatButton />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

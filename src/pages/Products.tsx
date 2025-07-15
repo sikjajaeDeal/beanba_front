@@ -83,15 +83,22 @@ const Products = () => {
 
     if (likingPosts.has(postPk)) return;
 
+    const product = products.find(p => p.postPk === postPk);
+    const isCurrentlyLiked = product?.salePostLiked;
+
     setLikingPosts(prev => new Set(prev).add(postPk));
     try {
-      await likeService.likeProduct(postPk);
+      if (isCurrentlyLiked) {
+        await likeService.unlikeProduct(postPk);
+      } else {
+        await likeService.likeProduct(postPk);
+      }
       // 상품 목록 다시 불러오기
       const updatedProducts = await salePostService.getSalePosts();
       setProducts(updatedProducts);
       toast({
-        title: '좋아요',
-        description: '좋아요 상태가 변경되었습니다.'
+        title: isCurrentlyLiked ? '찜 취소' : '찜 등록',
+        description: isCurrentlyLiked ? '찜 목록에서 제거되었습니다.' : '찜 목록에 추가되었습니다.'
       });
     } catch (error) {
       toast({

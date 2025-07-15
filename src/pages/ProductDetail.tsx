@@ -309,13 +309,11 @@ const ProductDetail = () => {
 
             {/* Location Info */}
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">위치 정보</h3>
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-600">
-                  위도: {product.latitude.toFixed(6)}, 경도: {product.longitude.toFixed(6)}
-                </span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">판매 위치</h3>
+              <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center border">
+                <p className="text-gray-500">카카오맵이 여기에 표시됩니다</p>
               </div>
+              <p className="text-sm text-gray-500 mt-2">판매자의 등록 위치를 기반으로 지도가 표시됩니다.</p>
             </div>
 
             {/* Action Buttons */}

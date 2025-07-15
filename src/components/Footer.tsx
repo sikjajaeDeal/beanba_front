@@ -20,10 +20,8 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">빠른 링크</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-white transition-colors">상품 보기</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white transition-colors">판매하기</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white transition-colors">구매하기</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white transition-colors">회원가입</a></li>
+              <li><a href="/products" className="text-gray-300 hover:text-white transition-colors">상품 보기</a></li>
+              <li><a href="/sell" className="text-gray-300 hover:text-white transition-colors">판매하기</a></li>
             </ul>
           </div>
 

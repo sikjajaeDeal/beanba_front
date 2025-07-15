@@ -105,7 +105,7 @@ const MyPosts = () => {
             <Card key={post.postPk} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-4">
                 <div className="relative">
-                  <Link to={`/products/${post.postPk}`}>
+                  <Link to={`/product/${post.postPk}`}>
                     <div className="aspect-square mb-4 bg-gray-100 rounded-lg overflow-hidden">
                       {post.thumbnailUrl ? (
                         <img
@@ -121,18 +121,32 @@ const MyPosts = () => {
                     </div>
                   </Link>
                   
-                  {/* 삭제 버튼 */}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => handleDeletePost(post.postPk)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {/* 삭제 및 수정 버튼 */}
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // TODO: 수정 기능 구현 예정
+                        toast({
+                          title: "알림",
+                          description: "수정 기능은 곧 구현될 예정입니다.",
+                        });
+                      }}
+                    >
+                      수정
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeletePost(post.postPk)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
-                <Link to={`/products/${post.postPk}`}>
+                <Link to={`/product/${post.postPk}`}>
                   <div className="space-y-2">
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       {post.categoryName}

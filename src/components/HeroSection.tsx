@@ -19,11 +19,20 @@ const HeroSection = () => {
               대한민국 최대 식재료 거래 플랫폼입니다.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-white text-green-700 hover:bg-green-50 transition-all transform hover:scale-105">
-                구매하기
+              <Button 
+                size="lg" 
+                className="bg-white text-green-700 hover:bg-green-50 transition-all transform hover:scale-105"
+                onClick={() => window.location.href = '/products'}
+              >
+                상품 보기
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-700 transition-all">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-white text-white hover:bg-white hover:text-green-700 transition-all"
+                onClick={() => window.location.href = '/sell'}
+              >
                 판매하기
               </Button>
             </div>
