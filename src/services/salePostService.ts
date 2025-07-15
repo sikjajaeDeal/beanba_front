@@ -99,4 +99,50 @@ export const salePostService = {
 
     return response.json();
   },
+
+  // 내 게시글 조회 (토큰 필요)
+  getMyPosts: async (): Promise<SalePost[]> => {
+    const token = authService.getAccessToken();
+    
+    if (!token) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/mypage/sales`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || '내 게시글을 불러오는데 실패했습니다.');
+    }
+
+    return response.json();
+  },
+
+  // 게시글 삭제 (토큰 필요)
+  deleteSalePost: async (postPk: number): Promise<void> => {
+    const token = authService.getAccessToken();
+    
+    if (!token) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/sale-post/${postPk}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || '게시글 삭제에 실패했습니다.');
+    }
+  },
 };

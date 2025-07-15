@@ -12,9 +12,11 @@ interface AuthFormProps {
   onSubmit: (formData: any) => void;
   prefilledEmail?: string;
   onClose: () => void;
+  onFindId?: () => void;
+  onFindPassword?: () => void;
 }
 
-const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormProps) => {
+const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose, onFindId, onFindPassword }: AuthFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -208,10 +210,7 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
             <button
               type="button"
               className="text-gray-500 hover:text-gray-700"
-              onClick={() => {
-                // TODO: 백엔드 API 연동 - 아이디 찾기 기능
-                console.log('아이디 찾기 클릭');
-              }}
+              onClick={onFindId}
             >
               아이디 찾기
             </button>
@@ -219,10 +218,7 @@ const AuthForm = ({ isLogin, onSubmit, prefilledEmail = '', onClose }: AuthFormP
             <button
               type="button"
               className="text-gray-500 hover:text-gray-700"
-              onClick={() => {
-                // TODO: 백엔드 API 연동 - 비밀번호 찾기 기능
-                console.log('비밀번호 찾기 클릭');
-              }}
+              onClick={onFindPassword}
             >
               비밀번호 찾기
             </button>

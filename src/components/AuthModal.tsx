@@ -5,13 +5,15 @@ import SocialLoginButtons from './auth/SocialLoginButtons';
 import LocationDisplay from './auth/LocationDisplay';
 import AuthForm from './auth/AuthForm';
 import EmailVerification from './auth/EmailVerification';
+import FindIdForm from './auth/FindIdForm';
+import FindPasswordForm from './auth/FindPasswordForm';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type AuthStep = 'login' | 'email-verification' | 'signup';
+type AuthStep = 'login' | 'email-verification' | 'signup' | 'find-id' | 'find-password';
 
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>('login');
@@ -65,6 +67,10 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         return '이메일 인증';
       case 'signup':
         return '회원가입';
+      case 'find-id':
+        return '아이디 찾기';
+      case 'find-password':
+        return '비밀번호 찾기';
       default:
         return '로그인';
     }
@@ -88,6 +94,10 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           <div className={`space-y-6 ${currentStep !== 'signup' ? 'w-full max-w-sm' : 'flex-1'}`}>
             {currentStep === 'email-verification' ? (
               <EmailVerification onVerified={handleEmailVerified} />
+            ) : currentStep === 'find-id' ? (
+              <FindIdForm onBack={() => setCurrentStep('login')} />
+            ) : currentStep === 'find-password' ? (
+              <FindPasswordForm onBack={() => setCurrentStep('login')} />
             ) : (
               <>
                 <SocialLoginButtons 
@@ -109,11 +119,13 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   onSubmit={handleSubmit}
                   prefilledEmail={verifiedEmail}
                   onClose={handleClose}
+                  onFindId={() => setCurrentStep('find-id')}
+                  onFindPassword={() => setCurrentStep('find-password')}
                 />
               </>
             )}
 
-            {currentStep !== 'email-verification' && (
+            {currentStep !== 'email-verification' && currentStep !== 'find-id' && currentStep !== 'find-password' && (
               <div className="text-center">
                 <button
                   type="button"

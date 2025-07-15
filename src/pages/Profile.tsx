@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, User, Settings, LogOut, Chrome } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Settings, LogOut, Chrome, Heart, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -115,8 +115,15 @@ const Profile = () => {
           
           <Link to="/liked-products">
             <Button variant="outline" className="w-full justify-start">
-              <Settings className="h-4 w-4 mr-3" />
+              <Heart className="h-4 w-4 mr-3" />
               찜한 상품 보기
+            </Button>
+          </Link>
+          
+          <Link to="/my-posts">
+            <Button variant="outline" className="w-full justify-start">
+              <FileText className="h-4 w-4 mr-3" />
+              내 게시글 관리
             </Button>
           </Link>
           

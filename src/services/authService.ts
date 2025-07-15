@@ -133,5 +133,39 @@ export const authService = {
 
   isLoggedIn(): boolean {
     return !!this.getAccessToken();
+  },
+
+  async findId(email: string): Promise<void> {
+    const response = await fetch(`http://localhost:8080/api/member/findId?email=${email}`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (errorData.error) {
+        throw new Error(errorData.error);
+      }
+      throw new Error('아이디 찾기에 실패했습니다.');
+    }
+
+    // Success response is raw text: "가입시 이메일로 아이디 발송."
+    return;
+  },
+
+  async findPassword(memberId: string, email: string): Promise<void> {
+    const response = await fetch(`http://localhost:8080/api/member/findPassword?memberId=${memberId}&email=${email}`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (errorData.error) {
+        throw new Error(errorData.error);
+      }
+      throw new Error('비밀번호 찾기에 실패했습니다.');
+    }
+
+    // Success response is raw text: "가입시 이메일로 아이디 발송."
+    return;
   }
 };
