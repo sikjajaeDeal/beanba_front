@@ -120,7 +120,16 @@ const Header = () => {
                     </Button>
                   </Link>
                   <Link to="/liked-products">
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        // 페이지가 이미 /liked-products인 경우 새로고침
+                        if (window.location.pathname === '/liked-products') {
+                          window.location.reload();
+                        }
+                      }}
+                    >
                       <Heart className="h-4 w-4" />
                       <span className="hidden sm:block ml-1">찜</span>
                     </Button>

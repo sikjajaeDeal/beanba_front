@@ -233,7 +233,9 @@ const Products = () => {
                       
                       <div className="flex items-center space-x-1 text-sm text-gray-500">
                         <MapPin className="h-4 w-4" />
-                        <span>{product.latitude.toFixed(4)}, {product.longitude.toFixed(4)}</span>
+                        <div className="h-24 bg-gray-100 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-500">위치 정보</span>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

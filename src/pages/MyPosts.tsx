@@ -85,7 +85,8 @@ const MyPosts = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <div className="container mx-auto p-4">
       <div className="flex items-center mb-6">
         <Link to="/profile">
           <Button variant="ghost" size="sm" className="mr-4">
@@ -176,6 +177,7 @@ const MyPosts = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };

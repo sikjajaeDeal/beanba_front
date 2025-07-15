@@ -135,6 +135,18 @@ const Profile = () => {
             <LogOut className="h-4 w-4 mr-3" />
             로그아웃
           </Button>
+          
+          <Button 
+            variant="outline" 
+            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => {
+              // TODO: 탈퇴 확인 다이얼로그 구현 예정
+              alert('탈퇴 기능은 곧 구현될 예정입니다.');
+            }}
+          >
+            <User className="h-4 w-4 mr-3" />
+            탈퇴하기
+          </Button>
         </div>
       </div>
     </div>

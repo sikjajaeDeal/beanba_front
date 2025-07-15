@@ -25,12 +25,11 @@ const HeroSection = () => {
                 onClick={() => window.location.href = '/products'}
               >
                 상품 보기
-                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-green-700 transition-all"
+                className="border-white text-white hover:bg-white hover:text-green-700 transition-all transform hover:scale-105"
                 onClick={() => window.location.href = '/sell'}
               >
                 판매하기

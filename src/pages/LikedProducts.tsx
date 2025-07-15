@@ -66,6 +66,24 @@ const LikedProducts = () => {
     }
   };
 
+  const refreshLikedProducts = async () => {
+    if (!user) return;
+    try {
+      const data = await likeService.getLikedProducts();
+      setLikedProducts(data);
+      toast({
+        title: '새로고침 완료',
+        description: '찜한 상품 목록이 업데이트되었습니다.'
+      });
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: '찜한 상품 목록을 새로고침하는데 실패했습니다.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleUnlike = async (postPk: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -74,7 +92,7 @@ const LikedProducts = () => {
 
     setLikingPosts(prev => new Set(prev).add(postPk));
     try {
-      await likeService.likeProduct(postPk);
+      await likeService.unlikeProduct(postPk);
       // 찜한 상품 목록에서 제거
       setLikedProducts(prev => prev.filter(product => product.postPk !== postPk));
       toast({

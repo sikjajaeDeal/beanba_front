@@ -35,8 +35,9 @@ const Sell = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files).slice(0, 4); // 최대 4개로 제한
-      setSelectedImages(files);
+      const newFiles = Array.from(e.target.files);
+      const totalImages = [...selectedImages, ...newFiles];
+      setSelectedImages(totalImages.slice(0, 4)); // 최대 4개로 제한
     }
   };
 
@@ -49,6 +50,7 @@ const Sell = () => {
         description: '상품 등록을 위해 로그인해주세요.',
         variant: 'destructive'
       });
+      navigate('/login');
       return;
     }
 
@@ -105,47 +107,11 @@ const Sell = () => {
             식재료 판매하기
           </h1>
           <p className="text-xl text-green-100 mb-8">
-            신선한 식재료를 지역 구매자들에게 직접 판매해보세요
+            곡물, 채소, 축산물, 수산물 등 다양한 식재료를 자유롭게 판매하세요
           </p>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              왜 콩바구니에서 판매하세요?
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <Package className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <CardTitle className="text-xl">다양한 상품 카테고리</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  곡물, 채소, 축산물, 수산물 등 다양한 식재료를 자유롭게 판매하세요
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <DollarSign className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <CardTitle className="text-xl">경쟁력 있는 수수료</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  합리적인 수수료와 빠른 정산으로 더 많은 수익을 확보하세요
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
       {/* Product Registration Form */}
       <section className="py-16 bg-gray-50">
