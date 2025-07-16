@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Save, Chrome } from 'lucide-react';
+import { ArrowLeft, Save, Chrome, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
+import KakaoMap from '@/components/KakaoMap';
 
 const ProfileSettings = () => {
   const { memberInfo, updateMemberInfo } = useAuth();
@@ -208,6 +208,41 @@ const ProfileSettings = () => {
                   <span className="text-sm">{getProviderName(memberInfo.provider)}</span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* 위치 정보 카드 */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MapPin className="h-5 w-5" />
+                <span>위치 정보</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {memberInfo.latitude && memberInfo.longitude ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">현재 설정된 위치</p>
+                  <KakaoMap 
+                    latitude={memberInfo.latitude} 
+                    longitude={memberInfo.longitude}
+                    height="250px"
+                    level={4}
+                    className="shadow-sm"
+                  />
+                  <Button type="button" variant="outline" className="w-full">
+                    위치 변경하기
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">위치 정보가 설정되지 않았습니다.</p>
+                  <Button type="button" variant="outline">
+                    위치 설정하기
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
+import KakaoMap from '@/components/KakaoMap';
 
 const Profile = () => {
   const { memberInfo, logout } = useAuth();
@@ -24,12 +25,10 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      // TODO: 로그아웃 처리 후 홈으로 리다이렉트
       await logout();
       navigate('/');
     } catch (error) {
       console.error('로그아웃 오류:', error);
-      // 오류가 발생해도 홈으로 이동
       navigate('/');
     }
   };
@@ -91,10 +90,30 @@ const Profile = () => {
               <User className="h-5 w-5 text-gray-400" />
               <span>{memberInfo.email}</span>
             </div>
-            <div className="flex items-center space-x-3">
-              <MapPin className="h-5 w-5 text-gray-400" />
-              <span>위치: ({memberInfo.latitude}, {memberInfo.longitude})</span>
-            </div>
+            
+            {memberInfo.latitude && memberInfo.longitude ? (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <MapPin className="h-5 w-5 text-gray-400" />
+                  <span>내 위치</span>
+                </div>
+                <div className="ml-8">
+                  <KakaoMap 
+                    latitude={memberInfo.latitude} 
+                    longitude={memberInfo.longitude}
+                    height="250px"
+                    level={4}
+                    className="shadow-sm"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <MapPin className="h-5 w-5 text-gray-400" />
+                <span className="text-gray-500">위치 정보가 설정되지 않았습니다.</span>
+              </div>
+            )}
+            
             <div className="pt-4 border-t">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-500">가입방식:</span>
@@ -140,7 +159,6 @@ const Profile = () => {
             variant="outline" 
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={() => {
-              // TODO: 탈퇴 확인 다이얼로그 구현 예정
               alert('탈퇴 기능은 곧 구현될 예정입니다.');
             }}
           >

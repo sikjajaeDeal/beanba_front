@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import KakaoMap from '@/components/KakaoMap';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Eye, MapPin, ArrowLeft, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -307,13 +308,18 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Location Info */}
+            {/* Location Info with Kakao Map */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">판매 위치</h3>
-              <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center border">
-                <p className="text-gray-500">카카오맵이 여기에 표시됩니다</p>
-              </div>
-              <p className="text-sm text-gray-500 mt-2">판매자의 등록 위치를 기반으로 지도가 표시됩니다.</p>
+              <KakaoMap
+                latitude={product.latitude}
+                longitude={product.longitude}
+                width="100%"
+                height="300px"
+                level={3}
+                className="mb-2"
+              />
+              <p className="text-sm text-gray-500">판매자의 등록 위치를 기반으로 지도가 표시됩니다.</p>
             </div>
 
             {/* Action Buttons */}
