@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, User, Settings, LogOut, Chrome, Heart, FileText } from 'lucide-react';
@@ -104,6 +105,7 @@ const Profile = () => {
                     height="250px"
                     level={4}
                     className="shadow-sm"
+                    showAddress={true}
                   />
                 </div>
               </div>

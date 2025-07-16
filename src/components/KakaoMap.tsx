@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface KakaoMapProps {
   latitude: number;
@@ -8,6 +8,8 @@ interface KakaoMapProps {
   height?: string;
   level?: number;
   className?: string;
+  showAddress?: boolean;
+  onAddressChange?: (address: string) => void;
 }
 
 declare global {
@@ -22,9 +24,12 @@ const KakaoMap = ({
   width = "100%", 
   height = "200px", 
   level = 3,
-  className = ""
+  className = "",
+  showAddress = false,
+  onAddressChange
 }: KakaoMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
+  const [address, setAddress] = useState<string>('');
 
   useEffect(() => {
     const initializeMap = () => {
@@ -45,6 +50,21 @@ const KakaoMap = ({
           });
           
           marker.setMap(map);
+
+          // geocoder 서비스 사용하여 주소 변환
+          if (showAddress || onAddressChange) {
+            const geocoder = new window.kakao.maps.services.Geocoder();
+            
+            geocoder.coord2Address(longitude, latitude, (result: any, status: any) => {
+              if (status === window.kakao.maps.services.Status.OK) {
+                const addressName = result[0].address.address_name;
+                setAddress(addressName);
+                if (onAddressChange) {
+                  onAddressChange(addressName);
+                }
+              }
+            });
+          }
         });
       }
     };
@@ -53,10 +73,10 @@ const KakaoMap = ({
     if (window.kakao && window.kakao.maps) {
       initializeMap();
     } else {
-      // 스크립트 로드
+      // 스크립트 로드 (services 라이브러리 포함)
       const script = document.createElement('script');
       script.async = true;
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAOMAP_KEY}&autoload=false`;
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAOMAP_KEY}&libraries=services&autoload=false`;
       document.head.appendChild(script);
 
       script.onload = () => {
@@ -67,14 +87,21 @@ const KakaoMap = ({
         console.error('카카오 맵 스크립트 로드 실패');
       };
     }
-  }, [latitude, longitude, level]);
+  }, [latitude, longitude, level, showAddress, onAddressChange]);
 
   return (
-    <div 
-      ref={mapContainer} 
-      style={{ width, height }} 
-      className={`rounded-lg border ${className}`}
-    />
+    <div className="relative">
+      <div 
+        ref={mapContainer} 
+        style={{ width, height }} 
+        className={`rounded-lg border ${className}`}
+      />
+      {showAddress && address && (
+        <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm font-medium text-gray-700 shadow-md z-10">
+          {address}
+        </div>
+      )}
+    </div>
   );
 };
 

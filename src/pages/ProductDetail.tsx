@@ -318,6 +318,7 @@ const ProductDetail = () => {
                 height="300px"
                 level={3}
                 className="mb-2"
+                showAddress={true}
               />
               <p className="text-sm text-gray-500">판매자의 등록 위치를 기반으로 지도가 표시됩니다.</p>
             </div>

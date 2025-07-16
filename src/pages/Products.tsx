@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -11,9 +10,14 @@ import { salePostService, SalePost } from '@/services/salePostService';
 import { likeService } from '@/services/likeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { convertCoordsToAddress, loadKakaoMapScript } from '@/utils/addressUtils';
+
+interface ProductWithAddress extends SalePost {
+  addressName?: string;
+}
 
 const Products = () => {
-  const [products, setProducts] = useState<SalePost[]>([]);
+  const [products, setProducts] = useState<ProductWithAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [likingPosts, setLikingPosts] = useState<Set<number>>(new Set());
   const { user } = useAuth();
@@ -22,8 +26,25 @@ const Products = () => {
   useEffect(() => {
     const loadProducts = async () => {
       try {
+        // 카카오맵 스크립트 로드
+        await loadKakaoMapScript();
+        
         const data = await salePostService.getSalePosts();
-        setProducts(data);
+        
+        // 각 상품의 좌표를 주소로 변환
+        const productsWithAddress = await Promise.all(
+          data.map(async (product) => {
+            try {
+              const addressName = await convertCoordsToAddress(product.latitude, product.longitude);
+              return { ...product, addressName };
+            } catch (error) {
+              console.error('주소 변환 실패:', error);
+              return { ...product, addressName: '주소 정보 없음' };
+            }
+          })
+        );
+        
+        setProducts(productsWithAddress);
       } catch (error) {
         toast({
           title: '오류',
@@ -69,12 +90,6 @@ const Products = () => {
     }
   };
 
-  // 위도/경도를 임시 주소로 변환하는 함수 (추후 카카오맵 API로 대체)
-  const getLocationText = (latitude: number, longitude: number) => {
-    // TODO: 카카오맵 API로 좌표를 주소로 변환
-    return "서울시 강남구";
-  };
-
   const handleLike = async (postPk: number, e: React.MouseEvent) => {
     e.preventDefault(); // Link 클릭 방지
     e.stopPropagation();
@@ -102,7 +117,17 @@ const Products = () => {
       }
       // 상품 목록 다시 불러오기
       const updatedProducts = await salePostService.getSalePosts();
-      setProducts(updatedProducts);
+      
+      // 주소 정보 유지하면서 업데이트
+      const updatedProductsWithAddress = updatedProducts.map(updatedProduct => {
+        const existingProduct = products.find(p => p.postPk === updatedProduct.postPk);
+        return {
+          ...updatedProduct,
+          addressName: existingProduct?.addressName || '주소 정보 없음'
+        };
+      });
+      
+      setProducts(updatedProductsWithAddress);
       toast({
         title: isCurrentlyLiked ? '찜 취소' : '찜 등록',
         description: isCurrentlyLiked ? '찜 목록에서 제거되었습니다.' : '찜 목록에 추가되었습니다.'
@@ -240,7 +265,7 @@ const Products = () => {
                       
                       <div className="flex items-center space-x-1 text-sm text-gray-500">
                         <MapPin className="h-4 w-4" />
-                        <span>{getLocationText(product.latitude, product.longitude)}</span>
+                        <span>{product.addressName || '주소 정보 없음'}</span>
                       </div>
                     </div>
                   </CardContent>
