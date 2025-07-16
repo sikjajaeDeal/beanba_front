@@ -13,6 +13,8 @@ import Profile from "./pages/Profile";
 import ProfileSettings from "./pages/ProfileSettings";
 import LikedProducts from "./pages/LikedProducts";
 import MyPosts from "./pages/MyPosts";
+import SignupVerify from "./pages/SignupVerify";
+import SocialCallback from "./pages/SocialCallback";
 import NotFound from "./pages/NotFound";
 import ChatButton from "./components/chat/ChatButton";
 
@@ -34,6 +36,9 @@ const App = () => (
             <Route path="/profile/settings" element={<ProfileSettings />} />
             <Route path="/liked-products" element={<LikedProducts />} />
             <Route path="/my-posts" element={<MyPosts />} />
+            <Route path="/signup/verify" element={<SignupVerify />} />
+            <Route path="/login/oauth2/code/kakao" element={<SocialCallback />} />
+            <Route path="/login/oauth2/code/google" element={<SocialCallback />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

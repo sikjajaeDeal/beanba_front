@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -41,6 +42,11 @@ const Sell = () => {
     }
   };
 
+  const removeImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    setSelectedImages(newImages);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -50,7 +56,7 @@ const Sell = () => {
         description: '상품 등록을 위해 로그인해주세요.',
         variant: 'destructive'
       });
-      navigate('/login');
+      navigate('/products');
       return;
     }
 
@@ -112,7 +118,6 @@ const Sell = () => {
         </div>
       </section>
 
-
       {/* Product Registration Form */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -121,7 +126,7 @@ const Sell = () => {
               상품 등록하기
             </h2>
             <p className="text-lg text-gray-600">
-              아래 양식을 작성하여 상품을 등록해주세요
+              곡물, 채소, 축산물, 수산물 등 다양한 식재료를 자유롭게 판매하세요
             </p>
           </div>
 
@@ -166,7 +171,7 @@ const Sell = () => {
                     id="content"
                     value={formData.content}
                     onChange={(e) => handleInputChange('content', e.target.value)}
-                    placeholder="상품에 대한 자세한 설명을 입력하세요"
+                    placeholder="예) 구매날짜 : 2025년 05월 12일, 유통기한 : 2025년 7월 24일"
                     rows={4}
                     required
                   />
@@ -188,12 +193,11 @@ const Sell = () => {
                 {/* Map Section */}
                 <div>
                   <Label>판매 위치</Label>
-                  <div className="mt-2 h-48 bg-gray-100 rounded-lg flex items-center justify-center border">
+                  <div className="mt-2 h-64 bg-gray-100 rounded-lg flex items-center justify-center border">
                     <p className="text-gray-500">카카오맵이 여기에 표시됩니다</p>
                   </div>
                   <p className="text-sm text-gray-500 mt-2">회원가입 시 등록한 위치를 기반으로 지도가 표시됩니다.</p>
                 </div>
-
 
                 {/* Image Upload */}
                 <div className="border-t pt-6">
@@ -243,10 +247,7 @@ const Sell = () => {
                               />
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const newImages = selectedImages.filter((_, i) => i !== index);
-                                  setSelectedImages(newImages);
-                                }}
+                                onClick={() => removeImage(index)}
                                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                               >
                                 ×

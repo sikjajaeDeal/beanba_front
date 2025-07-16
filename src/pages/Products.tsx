@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -66,6 +67,12 @@ const Products = () => {
       case 'R': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // 위도/경도를 임시 주소로 변환하는 함수 (추후 카카오맵 API로 대체)
+  const getLocationText = (latitude: number, longitude: number) => {
+    // TODO: 카카오맵 API로 좌표를 주소로 변환
+    return "서울시 강남구";
   };
 
   const handleLike = async (postPk: number, e: React.MouseEvent) => {
@@ -233,9 +240,7 @@ const Products = () => {
                       
                       <div className="flex items-center space-x-1 text-sm text-gray-500">
                         <MapPin className="h-4 w-4" />
-                        <div className="h-24 bg-gray-100 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-500">위치 정보</span>
-                        </div>
+                        <span>{getLocationText(product.latitude, product.longitude)}</span>
                       </div>
                     </div>
                   </CardContent>

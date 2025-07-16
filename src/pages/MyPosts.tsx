@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { salePostService, SalePost } from '@/services/salePostService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,6 +62,25 @@ const MyPosts = () => {
     }
   };
 
+  const handleStatusChange = (postPk: number, newStatus: string) => {
+    // TODO: API 연동 예정
+    console.log(`게시글 ${postPk}의 상태를 ${newStatus}로 변경`);
+    toast({
+      title: "알림",
+      description: "상태 변경 기능은 곧 구현될 예정입니다.",
+    });
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'S': return '판매중';
+      case 'H': return '판매 보류';
+      case 'R': return '예약중';
+      case 'C': return '판매 완료';
+      default: return '판매중';
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
   };
@@ -85,98 +106,121 @@ const MyPosts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-green-300 to-green-200">
       <div className="container mx-auto p-4">
-      <div className="flex items-center mb-6">
-        <Link to="/profile">
-          <Button variant="ghost" size="sm" className="mr-4">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold">내 게시글 관리</h1>
-      </div>
-
-      {posts.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          아직 등록한 게시글이 없습니다.
+        <div className="flex items-center mb-6">
+          <Link to="/profile">
+            <Button variant="ghost" size="sm" className="mr-4">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold">내 게시글 관리</h1>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((post) => (
-            <Card key={post.postPk} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <div className="relative">
+
+        {posts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            아직 등록한 게시글이 없습니다.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {posts.map((post) => (
+              <Card key={post.postPk} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <div className="relative">
+                    <Link to={`/product/${post.postPk}`}>
+                      <div className="aspect-square mb-4 bg-gray-100 rounded-lg overflow-hidden">
+                        {post.thumbnailUrl ? (
+                          <img
+                            src={post.thumbnailUrl}
+                            alt={post.title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            이미지 없음
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    
+                    {/* 삭제 및 수정 버튼 */}
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // TODO: 수정 기능 구현 예정
+                          toast({
+                            title: "알림",
+                            description: "수정 기능은 곧 구현될 예정입니다.",
+                          });
+                        }}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeletePost(post.postPk)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 판매 상태 선택 */}
+                  <div className="mb-3">
+                    <Select 
+                      defaultValue="S"
+                      onValueChange={(value) => handleStatusChange(post.postPk, value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="판매 상태 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="S">판매중</SelectItem>
+                        <SelectItem value="H">판매 보류</SelectItem>
+                        <SelectItem value="R">예약중</SelectItem>
+                        <SelectItem 
+                          value="C" 
+                          className="bg-orange-100 text-orange-800 font-semibold hover:bg-orange-200 focus:bg-orange-200 data-[state=checked]:bg-orange-200"
+                        >
+                          판매 완료
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <Link to={`/product/${post.postPk}`}>
-                    <div className="aspect-square mb-4 bg-gray-100 rounded-lg overflow-hidden">
-                      {post.thumbnailUrl ? (
-                        <img
-                          src={post.thumbnailUrl}
-                          alt={post.title}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          이미지 없음
-                        </div>
-                      )}
+                    <div className="space-y-2">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {post.categoryName}
+                      </span>
+                      <h3 className="font-semibold text-lg truncate hover:text-green-600 transition-colors">
+                        {post.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm line-clamp-2">
+                        {post.content}
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-green-600">
+                          {formatPrice(post.hopePrice)}원
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          조회 {post.viewCount} · 좋아요 {post.likeCount}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-gray-500">
+                        <span>{post.sellerNickname}</span>
+                        <span>{formatDate(post.postAt)}</span>
+                      </div>
                     </div>
                   </Link>
-                  
-                  {/* 삭제 및 수정 버튼 */}
-                  <div className="absolute top-2 right-2 flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // TODO: 수정 기능 구현 예정
-                        toast({
-                          title: "알림",
-                          description: "수정 기능은 곧 구현될 예정입니다.",
-                        });
-                      }}
-                    >
-                      수정
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeletePost(post.postPk)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <Link to={`/product/${post.postPk}`}>
-                  <div className="space-y-2">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {post.categoryName}
-                    </span>
-                    <h3 className="font-semibold text-lg truncate hover:text-green-600 transition-colors">
-                      {post.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {post.content}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-green-600">
-                        {formatPrice(post.hopePrice)}원
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        조회 {post.viewCount} · 좋아요 {post.likeCount}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs text-gray-500">
-                      <span>{post.sellerNickname}</span>
-                      <span>{formatDate(post.postAt)}</span>
-                    </div>
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -8,10 +8,20 @@ interface SocialLoginButtonsProps {
 }
 
 const SocialLoginButtons = ({ isLogin, onSocialLogin }: SocialLoginButtonsProps) => {
+  const handleSocialLogin = (provider: string) => {
+    if (provider === 'kakao') {
+      window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+    } else if (provider === 'google') {
+      window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    } else {
+      onSocialLogin(provider);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <Button
-        onClick={() => onSocialLogin('kakao')}
+        onClick={() => handleSocialLogin('kakao')}
         className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium"
         variant="outline"
       >
@@ -22,7 +32,7 @@ const SocialLoginButtons = ({ isLogin, onSocialLogin }: SocialLoginButtonsProps)
       </Button>
       
       <Button
-        onClick={() => onSocialLogin('google')}
+        onClick={() => handleSocialLogin('google')}
         className="w-full border-gray-300 hover:bg-gray-50"
         variant="outline"
       >

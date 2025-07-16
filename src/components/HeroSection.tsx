@@ -2,8 +2,30 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Leaf, Users, Award } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const HeroSection = () => {
+  const { isLoggedIn } = useAuth();
+  const { toast } = useToast();
+
+  const handleSellClick = () => {
+    if (!isLoggedIn) {
+      toast({
+        title: '로그인 필요',
+        description: '상품 등록을 위해 로그인해주세요.',
+        variant: 'destructive'
+      });
+      // 로그인 모달을 띄우는 로직은 Header에서 처리하도록 함
+      const authModal = document.querySelector('[data-auth-modal]') as HTMLElement;
+      if (authModal) {
+        authModal.click();
+      }
+      return;
+    }
+    window.location.href = '/sell';
+  };
+
   return (
     <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,7 +52,7 @@ const HeroSection = () => {
                 size="lg" 
                 variant="outline" 
                 className="border-white text-white hover:bg-white hover:text-green-700 transition-all transform hover:scale-105"
-                onClick={() => window.location.href = '/sell'}
+                onClick={handleSellClick}
               >
                 판매하기
               </Button>

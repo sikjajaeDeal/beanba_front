@@ -1,4 +1,3 @@
-
 interface LoginRequest {
   memberId: string;
   password: string;
@@ -20,6 +19,11 @@ interface LoginResponse {
   memberResponse: MemberResponse;
 }
 
+interface SocialLoginResponse {
+  accessToken: string;
+  memberResponse: MemberResponse;
+}
+
 export const authService = {
   async login(loginData: LoginRequest): Promise<LoginResponse> {
     // TODO: 백엔드 API 연동 - 로그인 API 호출
@@ -33,6 +37,20 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error('로그인에 실패했습니다.');
+    }
+
+    return response.json();
+  },
+
+  async processSocialLogin(callbackUrl: string): Promise<SocialLoginResponse> {
+    // 콜백 URL을 서버로 전달하여 소셜 로그인 처리
+    const response = await fetch(callbackUrl, {
+      method: 'GET',
+      credentials: 'include', // 쿠키 포함하여 요청
+    });
+
+    if (!response.ok) {
+      throw new Error('소셜 로그인 처리에 실패했습니다.');
     }
 
     return response.json();
@@ -64,13 +82,9 @@ export const authService = {
   },
 
   async sendEmailVerification(email: string): Promise<void> {
-    // TODO: 백엔드 API 연동 - 이메일 인증 전송 API 호출
-    const response = await fetch('http://localhost:8080/api/auth/signup/email', {
+    // TODO: 백엔드 API 연동 - 이메일 인증 전송 API 호출 (request param으로 변경)
+    const response = await fetch(`http://localhost:8080/api/auth/signup/email?email=${encodeURIComponent(email)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email }),
     });
 
     if (response.status === 409) {
