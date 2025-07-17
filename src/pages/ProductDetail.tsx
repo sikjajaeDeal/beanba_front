@@ -74,6 +74,10 @@ const ProductDetail = () => {
     }
   };
 
+  const selectImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case '곡물/두류': return 'bg-amber-100 text-amber-800';
@@ -148,50 +152,61 @@ const ProductDetail = () => {
           {/* 상품 이미지 캐러셀 */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             {product.imageUrls && product.imageUrls.length > 0 ? (
-              <div className="relative">
-                <img
-                  src={product.imageUrls[currentImageIndex]}
-                  alt={`${product.title} - ${currentImageIndex + 1}`}
-                  className="w-full h-96 object-cover rounded-lg"
-                />
-                
-                {/* 이미지 네비게이션 */}
+              <div className="space-y-4">
+                {/* 메인 이미지 */}
+                <div className="relative">
+                  <img
+                    src={product.imageUrls[currentImageIndex]}
+                    alt={`${product.title} - ${currentImageIndex + 1}`}
+                    className="w-full h-96 object-cover rounded-lg"
+                  />
+                  
+                  {/* 이미지 네비게이션 */}
+                  {product.imageUrls.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevImage}
+                        disabled={currentImageIndex === 0}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        disabled={currentImageIndex === product.imageUrls.length - 1}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                      
+                      {/* 이미지 카운터 */}
+                      <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                        {currentImageIndex + 1} / {product.imageUrls.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* 썸네일 이미지 리스트 */}
                 {product.imageUrls.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      disabled={currentImageIndex === 0}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      disabled={currentImageIndex === product.imageUrls.length - 1}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                    
-                    {/* 이미지 인디케이터 */}
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                      {product.imageUrls.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentImageIndex(index)}
-                          className={`w-3 h-3 rounded-full ${
-                            index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                          }`}
+                  <div className="flex space-x-2 overflow-x-auto pb-2">
+                    {product.imageUrls.map((imageUrl, index) => (
+                      <button
+                        key={index}
+                        onClick={() => selectImage(index)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                          index === currentImageIndex 
+                            ? 'border-green-500 ring-2 ring-green-200' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`${product.title} thumbnail ${index + 1}`}
+                          className="w-full h-full object-cover"
                         />
-                      ))}
-                    </div>
-                  </>
-                )}
-                
-                {/* 이미지 카운터 */}
-                {product.imageUrls.length > 1 && (
-                  <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                    {currentImageIndex + 1} / {product.imageUrls.length}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -295,11 +310,11 @@ const ProductDetail = () => {
             판매 위치
           </h2>
           
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <p className="text-gray-700">
-              <span className="font-medium">상세 주소:</span> {locationAddress || '주소를 불러오는 중...'}
-            </p>
-          </div>
+          {locationAddress && (
+            <div className="mb-4 text-gray-600">
+              <span className="font-medium">상세 주소:</span> {locationAddress}
+            </div>
+          )}
           
           <KakaoMap
             latitude={product.latitude}
@@ -307,7 +322,7 @@ const ProductDetail = () => {
             width="100%"
             height="400px"
             level={3}
-            showAddress={false}
+            showAddress={true}
             onAddressChange={(address) => setLocationAddress(address)}
             className="shadow-md"
           />

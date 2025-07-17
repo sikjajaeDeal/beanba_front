@@ -10,6 +10,7 @@ interface KakaoMapProps {
   className?: string;
   showAddress?: boolean;
   onAddressChange?: (address: string) => void;
+  showCurrentLocationMarker?: boolean;
 }
 
 declare global {
@@ -26,16 +27,20 @@ const KakaoMap = ({
   level = 3,
   className = "",
   showAddress = false,
-  onAddressChange
+  onAddressChange,
+  showCurrentLocationMarker = false
 }: KakaoMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [address, setAddress] = useState<string>('');
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   useEffect(() => {
     const initializeMap = () => {
       if (window.kakao && window.kakao.maps) {
         window.kakao.maps.load(() => {
           const container = mapContainer.current;
+          if (!container) return;
+
           const options = {
             center: new window.kakao.maps.LatLng(latitude, longitude),
             level: level
@@ -57,7 +62,10 @@ const KakaoMap = ({
             
             geocoder.coord2Address(longitude, latitude, (result: any, status: any) => {
               if (status === window.kakao.maps.services.Status.OK) {
-                const addressName = result[0].address.address_name;
+                const addressName = result[0].road_address 
+                  ? result[0].road_address.address_name 
+                  : result[0].address.address_name;
+                
                 setAddress(addressName);
                 if (onAddressChange) {
                   onAddressChange(addressName);
@@ -69,25 +77,39 @@ const KakaoMap = ({
       }
     };
 
-    // 카카오 맵 스크립트가 이미 로드되어 있는지 확인
-    if (window.kakao && window.kakao.maps) {
-      initializeMap();
-    } else {
-      // 스크립트 로드 (services 라이브러리 포함)
+    const loadKakaoMapScript = () => {
+      // 이미 스크립트가 로드되어 있는지 확인
+      if (window.kakao && window.kakao.maps) {
+        setIsScriptLoaded(true);
+        initializeMap();
+        return;
+      }
+
+      // 이미 스크립트 태그가 있는지 확인
+      const existingScript = document.querySelector('script[src*="dapi.kakao.com"]');
+      if (existingScript) {
+        return;
+      }
+
       const script = document.createElement('script');
       script.async = true;
       script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAOMAP_KEY}&libraries=services&autoload=false`;
-      document.head.appendChild(script);
-
+      
       script.onload = () => {
+        console.log('카카오 맵 스크립트 로드 성공');
+        setIsScriptLoaded(true);
         initializeMap();
       };
 
       script.onerror = () => {
         console.error('카카오 맵 스크립트 로드 실패');
       };
-    }
-  }, [latitude, longitude, level, showAddress, onAddressChange]);
+
+      document.head.appendChild(script);
+    };
+
+    loadKakaoMapScript();
+  }, [latitude, longitude, level, showAddress, onAddressChange, showCurrentLocationMarker]);
 
   return (
     <div className="relative">
@@ -99,6 +121,14 @@ const KakaoMap = ({
       {showAddress && address && (
         <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm font-medium text-gray-700 shadow-md z-10">
           {address}
+        </div>
+      )}
+      {!isScriptLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+            <p className="text-sm text-gray-600">지도를 불러오는 중...</p>
+          </div>
         </div>
       )}
     </div>

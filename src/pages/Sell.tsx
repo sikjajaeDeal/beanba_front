@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -88,8 +87,8 @@ const Sell = () => {
         description: '상품이 성공적으로 등록되었습니다.',
       });
 
-      // 등록 후 목록 페이지로 이동
-      navigate('/');
+      // 등록 후 상품 목록 페이지로 이동
+      navigate('/products');
       
     } catch (error) {
       toast({

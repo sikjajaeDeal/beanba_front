@@ -93,8 +93,8 @@ const Header = () => {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-6">
-              <Link to="/products" className="text-gray-700 hover:text-green-600 transition-colors">상품 보기</Link>
-              <Link to="/sell" className="text-gray-700 hover:text-green-600 transition-colors">판매하기</Link>
+              <Link to="/products" className="text-gray-700 hover:text-green-600 transition-colors px-3 py-2 rounded-md hover:bg-gray-50">상품 보기</Link>
+              <Link to="/sell" className="text-gray-700 hover:text-green-600 transition-colors px-3 py-2 rounded-md hover:bg-gray-50">판매하기</Link>
               <Button 
                 variant="ghost" 
                 onClick={() => setShowSearchResults(!showSearchResults)}
