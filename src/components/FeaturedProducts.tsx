@@ -1,11 +1,14 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Star, MapPin, Package } from 'lucide-react';
 
 const FeaturedProducts = () => {
+  const navigate = useNavigate();
+
   const products = [
     {
       id: 1,
@@ -120,8 +123,13 @@ const FeaturedProducts = () => {
         </div>
         
         <div className="text-center mt-12">
-          <Button size="lg" variant="outline" className="px-8">
-            더 많은 상품 보기
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="px-8"
+            onClick={() => navigate('/products')}
+          >
+            상품 보기
           </Button>
         </div>
       </div>

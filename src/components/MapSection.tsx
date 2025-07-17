@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Wheat, Carrot, Apple, Beef, Fish, Sprout, Target } from 'lucide-react';
 import ProductInfoPanel from './ProductInfoPanel';
 
@@ -27,7 +26,8 @@ interface Product {
 const MapSection = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [markers, setMarkers] = useState<any[]>([]);
@@ -127,11 +127,64 @@ const MapSection = () => {
   };
 
   const moveToCurrentLocation = () => {
-    if (map && userLocation) {
-      const moveLatLon = new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng);
+    if (map && currentLocation) {
+      const moveLatLon = new window.kakao.maps.LatLng(currentLocation.lat, currentLocation.lng);
       map.setCenter(moveLatLon);
       map.setLevel(4);
     }
+  };
+
+  const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
+    return new Promise((resolve, reject) => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            console.log("현재 위치 - 위도: " + latitude + ", 경도: " + longitude);
+            resolve({ lat: latitude, lng: longitude });
+          },
+          (error) => {
+            console.error('위치 정보를 가져올 수 없습니다:', error.message);
+            // 서울 시청 좌표를 기본값으로 사용
+            resolve({ lat: 37.5665, lng: 126.9780 });
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        console.error('브라우저가 위치 서비스를 지원하지 않습니다.');
+        // 서울 시청 좌표를 기본값으로 사용
+        resolve({ lat: 37.5665, lng: 126.9780 });
+      }
+    });
+  };
+
+  const convertCoordsToAddress = (lat: number, lng: number): Promise<string> => {
+    return new Promise((resolve) => {
+      if (window.kakao && window.kakao.maps) {
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        
+        geocoder.coord2Address(lng, lat, (result: any, status: any) => {
+          if (status === window.kakao.maps.services.Status.OK) {
+            const addressName = result[0].road_address 
+              ? result[0].road_address.address_name 
+              : result[0].address.address_name;
+            
+            // 간단한 주소로 변환 (시/구 정도만)
+            const parts = addressName.split(' ');
+            const shortAddress = parts.length >= 2 ? `${parts[0]} ${parts[1]}` : addressName;
+            resolve(shortAddress);
+          } else {
+            resolve('주소를 찾을 수 없습니다');
+          }
+        });
+      } else {
+        resolve('주소를 찾을 수 없습니다');
+      }
+    });
   };
 
   const createMarkerContent = (category: string, price: string) => {
@@ -182,103 +235,63 @@ const MapSection = () => {
   };
 
   useEffect(() => {
-    const initializeKakaoMap = () => {
+    const initializeKakaoMap = async () => {
       if (window.kakao && window.kakao.maps) {
-        window.kakao.maps.load(() => {
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                setUserLocation({ lat, lng });
-                
-                const container = mapContainer.current;
-                const options = {
-                  center: new window.kakao.maps.LatLng(lat, lng),
-                  level: 4
-                };
-                
-                const kakaoMap = new window.kakao.maps.Map(container, options);
-                setMap(kakaoMap);
+        window.kakao.maps.load(async () => {
+          try {
+            // 현재 위치 가져오기
+            const location = await getCurrentLocation();
+            setCurrentLocation(location);
+            
+            // 현재 위치의 주소 가져오기
+            const address = await convertCoordsToAddress(location.lat, location.lng);
+            setCurrentAddress(address);
+            
+            const container = mapContainer.current;
+            const options = {
+              center: new window.kakao.maps.LatLng(location.lat, location.lng),
+              level: 4
+            };
+            
+            const kakaoMap = new window.kakao.maps.Map(container, options);
+            setMap(kakaoMap);
 
-                // Create user location marker
-                const userMarkerPosition = new window.kakao.maps.LatLng(lat, lng);
-                const userMarkerContent = `
-                  <div style="
-                    width: 20px;
-                    height: 20px;
-                    background-color: #EF4444;
-                    border: 4px solid white;
-                    border-radius: 50%;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                    position: relative;
-                  ">
-                    <div style="
-                      position: absolute;
-                      top: 50%;
-                      left: 50%;
-                      transform: translate(-50%, -50%);
-                      width: 8px;
-                      height: 8px;
-                      background-color: white;
-                      border-radius: 50%;
-                    "></div>
-                  </div>
-                `;
-                
-                const userCustomMarker = new window.kakao.maps.CustomOverlay({
-                  map: kakaoMap,
-                  position: userMarkerPosition,
-                  content: userMarkerContent,
-                  yAnchor: 0.5,
-                  xAnchor: 0.5
+            // 카카오 기본 마커로 현재 위치 표시
+            const userMarkerPosition = new window.kakao.maps.LatLng(location.lat, location.lng);
+            const userKakaoMarker = new window.kakao.maps.Marker({
+              position: userMarkerPosition,
+              map: kakaoMap
+            });
+            
+            setUserMarker(userKakaoMarker);
+
+            // Create product markers
+            const newMarkers: any[] = [];
+            mockProducts.forEach((product) => {
+              const markerPosition = new window.kakao.maps.LatLng(product.location.lat, product.location.lng);
+              const markerContent = createMarkerContent(product.category, product.price);
+              
+              const customMarker = new window.kakao.maps.CustomOverlay({
+                map: kakaoMap,
+                position: markerPosition,
+                content: markerContent,
+                yAnchor: 1
+              });
+
+              // Add click event
+              const markerElement = customMarker.getContent().querySelector('div');
+              if (markerElement) {
+                markerElement.addEventListener('click', () => {
+                  handleProductClick(product);
                 });
-                
-                setUserMarker(userCustomMarker);
-
-                // Create product markers
-                const newMarkers: any[] = [];
-                mockProducts.forEach((product) => {
-                  const markerPosition = new window.kakao.maps.LatLng(product.location.lat, product.location.lng);
-                  const markerContent = createMarkerContent(product.category, product.price);
-                  
-                  const customMarker = new window.kakao.maps.CustomOverlay({
-                    map: kakaoMap,
-                    position: markerPosition,
-                    content: markerContent,
-                    yAnchor: 1
-                  });
-
-                  // Add click event
-                  const markerElement = customMarker.getContent().querySelector('div');
-                  if (markerElement) {
-                    markerElement.addEventListener('click', () => {
-                      handleProductClick(product);
-                    });
-                  }
-
-                  newMarkers.push(customMarker);
-                });
-                
-                setMarkers(newMarkers);
-              },
-              (error) => {
-                console.error('Location error:', error);
-                // Fallback to Seoul coordinates
-                const lat = 37.5665;
-                const lng = 126.9780;
-                setUserLocation({ lat, lng });
-                
-                const container = mapContainer.current;
-                const options = {
-                  center: new window.kakao.maps.LatLng(lat, lng),
-                  level: 4
-                };
-                
-                const kakaoMap = new window.kakao.maps.Map(container, options);
-                setMap(kakaoMap);
               }
-            );
+
+              newMarkers.push(customMarker);
+            });
+            
+            setMarkers(newMarkers);
+          } catch (error) {
+            console.error('지도 초기화 중 오류 발생:', error);
           }
         });
       }
@@ -291,9 +304,7 @@ const MapSection = () => {
       // Load Kakao Maps script if not already loaded
       const script = document.createElement('script');
       script.async = true;
-      // TODO: Move this API key to Spring Boot properties later
-      // Current API key: ac095486b0af57d713dacf3da83fb961
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=ac095486b0af57d713dacf3da83fb961&autoload=false`;
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAOMAP_KEY}&libraries=services&autoload=false`;
       document.head.appendChild(script);
 
       script.onload = () => {
@@ -320,8 +331,13 @@ const MapSection = () => {
             내 주변 거래 상품
           </h2>
           <p className="text-lg text-gray-600">
-            반경 300m 내 신선한 식재료를 확인해보세요
+            현재 위치 기준 반경 300m 내 신선한 식재료를 확인해보세요
           </p>
+          {currentAddress && (
+            <p className="text-xl text-green-600 font-semibold mt-3">
+              📍 현재 위치: {currentAddress}
+            </p>
+          )}
         </div>
         
         {/* Map Container */}
