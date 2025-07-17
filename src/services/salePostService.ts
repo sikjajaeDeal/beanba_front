@@ -28,6 +28,15 @@ export interface SalePost {
   salePostLiked: boolean;
 }
 
+export interface MyPostsResponse {
+  content: SalePost[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPage: number;
+  last: boolean;
+}
+
 const API_BASE_URL = 'http://localhost:8080/api';
 
 export const salePostService = {
@@ -100,15 +109,15 @@ export const salePostService = {
     return response.json();
   },
 
-  // 내 게시글 조회 (토큰 필요)
-  getMyPosts: async (): Promise<SalePost[]> => {
+  // 내 게시글 조회 (토큰 필요) - 페이징 처리 추가 (0 기반 인덱스)
+  getMyPosts: async (page: number = 0): Promise<MyPostsResponse> => {
     const token = authService.getAccessToken();
     
     if (!token) {
       throw new Error('로그인이 필요합니다.');
     }
 
-    const response = await fetch(`${API_BASE_URL}/mypage/sales`, {
+    const response = await fetch(`${API_BASE_URL}/mypage/sales?page=${page}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

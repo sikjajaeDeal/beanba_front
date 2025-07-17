@@ -80,8 +80,8 @@ const MapSection = () => {
             latitude={currentLocation.latitude}
             longitude={currentLocation.longitude}
             width="100%"
-            height="100%"
-            level={8}
+            height="600px"
+            level={4}
             showAddress={false}
             onAddressChange={handleAddressChange}
             className="w-full h-full"

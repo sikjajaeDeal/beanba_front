@@ -311,8 +311,9 @@ const ProductDetail = () => {
           </h2>
           
           {locationAddress && (
-            <div className="mb-4 text-gray-600">
-              <span className="font-medium">상세 주소:</span> {locationAddress}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <span className="font-semibold text-blue-800">📍 상세 주소:</span> 
+              <span className="text-blue-700 ml-2">{locationAddress}</span>
             </div>
           )}
           
@@ -322,7 +323,7 @@ const ProductDetail = () => {
             width="100%"
             height="400px"
             level={3}
-            showAddress={true}
+            showAddress={false}
             onAddressChange={(address) => setLocationAddress(address)}
             className="shadow-md"
           />
