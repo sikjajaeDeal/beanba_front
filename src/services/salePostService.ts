@@ -1,3 +1,4 @@
+
 import { authService } from './authService';
 
 export interface SalePostRequest {
@@ -29,6 +30,15 @@ export interface SalePost {
 }
 
 export interface MyPostsResponse {
+  content: SalePost[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPage: number;
+  last: boolean;
+}
+
+export interface SalePostsResponse {
   content: SalePost[];
   page: number;
   size: number;
@@ -75,9 +85,9 @@ export const salePostService = {
     }
   },
 
-  // 상품 목록 조회 (토큰 불필요)
-  getSalePosts: async (): Promise<SalePost[]> => {
-    const response = await fetch(`${API_BASE_URL}/sale-post/all`, {
+  // 상품 목록 조회 (페이징 처리 추가) - 0기반 인덱스
+  getSalePosts: async (page: number = 0): Promise<SalePostsResponse> => {
+    const response = await fetch(`${API_BASE_URL}/sale-post/all?page=${page}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

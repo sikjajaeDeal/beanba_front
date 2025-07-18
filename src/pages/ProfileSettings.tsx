@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Save, Chrome, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, Chrome, MapPin, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,10 +19,14 @@ const ProfileSettings = () => {
     nickname: memberInfo?.nickname || '',
     currentPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    latitude: memberInfo?.latitude || null,
+    longitude: memberInfo?.longitude || null
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState<string>('');
 
   if (!memberInfo) {
     return (
@@ -39,6 +44,53 @@ const ProfileSettings = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleLocationChange = () => {
+    setIsGettingLocation(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setFormData(prev => ({
+            ...prev,
+            latitude,
+            longitude
+          }));
+          setIsGettingLocation(false);
+          toast({
+            title: "위치 정보 업데이트",
+            description: "현재 위치로 업데이트되었습니다. 저장 버튼을 눌러 변경사항을 저장하세요.",
+          });
+        },
+        (error) => {
+          console.error('위치 정보 오류:', error);
+          setIsGettingLocation(false);
+          toast({
+            title: "오류",
+            description: "위치 정보를 가져올 수 없습니다. 브라우저 설정을 확인해주세요.",
+            variant: "destructive"
+          });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      );
+    } else {
+      setIsGettingLocation(false);
+      toast({
+        title: "오류",
+        description: "이 브라우저는 위치 서비스를 지원하지 않습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddressChange = (address: string) => {
+    setCurrentAddress(address);
   };
 
   const getProviderIcon = (provider: string) => {
@@ -94,9 +146,16 @@ const ProfileSettings = () => {
             description: "현재 비밀번호를 입력해주세요.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
         updateData.password = formData.newPassword;
+      }
+
+      // 위치 정보 변경 확인
+      if (formData.latitude !== memberInfo.latitude || formData.longitude !== memberInfo.longitude) {
+        updateData.latitude = formData.latitude;
+        updateData.longitude = formData.longitude;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -104,6 +163,7 @@ const ProfileSettings = () => {
           title: "알림",
           description: "변경된 정보가 없습니다.",
         });
+        setIsLoading(false);
         return;
       }
 
@@ -220,26 +280,51 @@ const ProfileSettings = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {memberInfo.latitude && memberInfo.longitude ? (
+              {formData.latitude && formData.longitude ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">현재 설정된 위치</p>
+                  <p className="text-sm text-gray-600">
+                    {formData.latitude !== memberInfo.latitude || formData.longitude !== memberInfo.longitude 
+                      ? '변경된 위치 (저장하지 않음)' 
+                      : '현재 설정된 위치'
+                    }
+                  </p>
                   <KakaoMap 
-                    latitude={memberInfo.latitude} 
-                    longitude={memberInfo.longitude}
+                    latitude={formData.latitude} 
+                    longitude={formData.longitude}
                     height="250px"
                     level={4}
                     className="shadow-sm"
+                    showAddress={true}
+                    onAddressChange={handleAddressChange}
                   />
-                  <Button type="button" variant="outline" className="w-full">
-                    위치 변경하기
+                  {currentAddress && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm font-medium text-blue-800">📍 {currentAddress}</p>
+                    </div>
+                  )}
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleLocationChange}
+                    disabled={isGettingLocation}
+                  >
+                    <Navigation className="h-4 w-4 mr-2" />
+                    {isGettingLocation ? '위치 가져오는 중...' : '현재 위치로 변경하기'}
                   </Button>
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-500 mb-4">위치 정보가 설정되지 않았습니다.</p>
-                  <Button type="button" variant="outline">
-                    위치 설정하기
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={handleLocationChange}
+                    disabled={isGettingLocation}
+                  >
+                    <Navigation className="h-4 w-4 mr-2" />
+                    {isGettingLocation ? '위치 가져오는 중...' : '현재 위치로 설정하기'}
                   </Button>
                 </div>
               )}

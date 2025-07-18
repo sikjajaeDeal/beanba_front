@@ -5,12 +5,20 @@ import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Eye, MapPin } from 'lucide-react';
-import { salePostService, SalePost } from '@/services/salePostService';
+import { Heart, Eye, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { salePostService, SalePost, SalePostsResponse } from '@/services/salePostService';
 import { likeService } from '@/services/likeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { convertCoordsToAddress, loadKakaoMapScript } from '@/utils/addressUtils';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 interface ProductWithAddress extends SalePost {
   addressName?: string;
@@ -20,44 +28,57 @@ const Products = () => {
   const [products, setProducts] = useState<ProductWithAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [likingPosts, setLikingPosts] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(0); // 0-based index
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        // 카카오맵 스크립트 로드
-        await loadKakaoMapScript();
-        
-        const data = await salePostService.getSalePosts();
-        
-        // 각 상품의 좌표를 주소로 변환
-        const productsWithAddress = await Promise.all(
-          data.map(async (product) => {
-            try {
-              const addressName = await convertCoordsToAddress(product.latitude, product.longitude);
-              return { ...product, addressName };
-            } catch (error) {
-              console.error('주소 변환 실패:', error);
-              return { ...product, addressName: '주소 정보 없음' };
-            }
-          })
-        );
-        
-        setProducts(productsWithAddress);
-      } catch (error) {
-        toast({
-          title: '오류',
-          description: error instanceof Error ? error.message : '상품 목록을 불러오는데 실패했습니다.',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const loadProducts = async (page: number) => {
+    try {
+      setIsLoading(true);
+      // 카카오맵 스크립트 로드
+      await loadKakaoMapScript();
+      
+      const response: SalePostsResponse = await salePostService.getSalePosts(page);
+      
+      // 각 상품의 좌표를 주소로 변환
+      const productsWithAddress = await Promise.all(
+        response.content.map(async (product) => {
+          try {
+            const addressName = await convertCoordsToAddress(product.latitude, product.longitude);
+            return { ...product, addressName };
+          } catch (error) {
+            console.error('주소 변환 실패:', error);
+            return { ...product, addressName: '주소 정보 없음' };
+          }
+        })
+      );
+      
+      setProducts(productsWithAddress);
+      setTotalPages(response.totalPage);
+      setTotalElements(response.totalElements);
+      setCurrentPage(response.page);
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: error instanceof Error ? error.message : '상품 목록을 불러오는데 실패했습니다.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    loadProducts();
-  }, [toast]);
+  useEffect(() => {
+    loadProducts(0); // 첫 페이지 로드 (0-based)
+  }, []);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 0 && page < totalPages) {
+      loadProducts(page);
+    }
+  };
 
   const formatPrice = (price: number) => {
     return price === 0 ? '무료나눔' : `${price.toLocaleString()}원`;
@@ -115,19 +136,8 @@ const Products = () => {
       } else {
         await likeService.likeProduct(postPk);
       }
-      // 상품 목록 다시 불러오기
-      const updatedProducts = await salePostService.getSalePosts();
-      
-      // 주소 정보 유지하면서 업데이트
-      const updatedProductsWithAddress = updatedProducts.map(updatedProduct => {
-        const existingProduct = products.find(p => p.postPk === updatedProduct.postPk);
-        return {
-          ...updatedProduct,
-          addressName: existingProduct?.addressName || '주소 정보 없음'
-        };
-      });
-      
-      setProducts(updatedProductsWithAddress);
+      // 현재 페이지 다시 로드
+      await loadProducts(currentPage);
       toast({
         title: isCurrentlyLiked ? '찜 취소' : '찜 등록',
         description: isCurrentlyLiked ? '찜 목록에서 제거되었습니다.' : '찜 목록에 추가되었습니다.'
@@ -145,6 +155,53 @@ const Products = () => {
         return newSet;
       });
     }
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    for (let i = 0; i < totalPages; i++) {
+      pages.push(i);
+    }
+
+    return (
+      <Pagination className="mt-8">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious 
+              onClick={() => handlePageChange(currentPage - 1)}
+              className={currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              이전
+            </PaginationPrevious>
+          </PaginationItem>
+
+          {pages.map((page) => (
+            <PaginationItem key={page}>
+              <PaginationLink
+                onClick={() => handlePageChange(page)}
+                isActive={currentPage === page}
+                className="cursor-pointer"
+              >
+                {page + 1} {/* 사용자에게는 1-based로 표시 */}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+
+          <PaginationItem>
+            <PaginationNext 
+              onClick={() => handlePageChange(currentPage + 1)}
+              className={currentPage === totalPages - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+            >
+              다음
+              <ChevronRight className="h-4 w-4" />
+            </PaginationNext>
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    );
   };
 
   if (isLoading) {
@@ -183,8 +240,11 @@ const Products = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900">
-              전체 상품 ({products.length})
+              전체 상품 ({totalElements})
             </h2>
+            <div className="text-sm text-gray-500">
+              페이지 {currentPage + 1} / {totalPages}
+            </div>
           </div>
 
           {products.length === 0 ? (
@@ -198,81 +258,85 @@ const Products = () => {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <Link to={`/product/${product.postPk}`} key={product.postPk}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <div className="relative">
-                    <img
-                      src={product.thumbnailUrl}
-                      alt={product.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => handleLike(product.postPk, e)}
-                      disabled={likingPosts.has(product.postPk)}
-                      className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white"
-                    >
-                      <Heart className={`h-4 w-4 ${product.salePostLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
-                    <Badge 
-                      className={`absolute top-2 left-2 ${getStateColor(product.state)}`}
-                    >
-                      {getStateText(product.state)}
-                    </Badge>
-                  </div>
-                  
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge variant="outline" className="text-xs">
-                        {product.categoryName}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {products.map((product) => (
+                  <Link to={`/product/${product.postPk}`} key={product.postPk}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <div className="relative">
+                      <img
+                        src={product.thumbnailUrl}
+                        alt={product.title}
+                        className="w-full h-48 object-cover rounded-t-lg"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleLike(product.postPk, e)}
+                        disabled={likingPosts.has(product.postPk)}
+                        className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white"
+                      >
+                        <Heart className={`h-4 w-4 ${product.salePostLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                      </Button>
+                      <Badge 
+                        className={`absolute top-2 left-2 ${getStateColor(product.state)}`}
+                      >
+                        {getStateText(product.state)}
                       </Badge>
-                      <div className="flex items-center space-x-1">
-                        <Heart className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">{product.likeCount}</span>
-                      </div>
                     </div>
-                    <CardTitle className="text-lg line-clamp-2">
-                      {product.title}
-                    </CardTitle>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0">
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                      {product.content}
-                    </p>
                     
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold text-green-600">
-                          {formatPrice(product.hopePrice)}
-                        </span>
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge variant="outline" className="text-xs">
+                          {product.categoryName}
+                        </Badge>
                         <div className="flex items-center space-x-1">
-                          <Eye className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">{product.viewCount}</span>
+                          <Heart className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-500">{product.likeCount}</span>
                         </div>
                       </div>
+                      <CardTitle className="text-lg line-clamp-2">
+                        {product.title}
+                      </CardTitle>
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0">
+                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                        {product.content}
+                      </p>
                       
-                      <div className="flex justify-between items-center text-sm text-gray-500">
-                        <span>{product.sellerNickname}</span>
-                        <span>{formatDate(product.postAt)}</span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-bold text-green-600">
+                            {formatPrice(product.hopePrice)}
+                          </span>
+                          <div className="flex items-center space-x-1">
+                            <Eye className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-500">{product.viewCount}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center text-sm text-gray-500">
+                          <span>{product.sellerNickname}</span>
+                          <span>{formatDate(product.postAt)}</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1 text-sm text-gray-500">
+                          <MapPin className="h-4 w-4" />
+                          <span>{product.addressName || '주소 정보 없음'}</span>
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center space-x-1 text-sm text-gray-500">
-                        <MapPin className="h-4 w-4" />
-                        <span>{product.addressName || '주소 정보 없음'}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                    </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+              
+              {renderPagination()}
+            </>
           )}
         </div>
       </section>

@@ -1,3 +1,4 @@
+
 import { authService } from './authService';
 
 export interface LikedProduct {
@@ -16,6 +17,15 @@ export interface LikedProduct {
   longitude: number;
   thumbnailUrl: string;
   salePostLiked: boolean;
+}
+
+export interface LikedProductsResponse {
+  content: LikedProduct[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPage: number;
+  last: boolean;
 }
 
 class LikeService {
@@ -59,13 +69,13 @@ class LikeService {
     }
   }
 
-  async getLikedProducts(): Promise<LikedProduct[]> {
+  async getLikedProducts(page: number = 0): Promise<LikedProductsResponse> {
     const token = authService.getAccessToken();
     if (!token) {
       throw new Error('로그인이 필요합니다.');
     }
 
-    const response = await fetch(`${this.baseURL}/mypage`, {
+    const response = await fetch(`${this.baseURL}/mypage?page=${page}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`

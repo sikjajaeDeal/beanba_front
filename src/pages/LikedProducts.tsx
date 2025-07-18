@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -5,14 +6,23 @@ import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Eye, MapPin, ArrowLeft } from 'lucide-react';
-import { likeService, LikedProduct } from '@/services/likeService';
+import { likeService, LikedProduct, LikedProductsResponse } from '@/services/likeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 const LikedProducts = () => {
-  const [likedProducts, setLikedProducts] = useState<LikedProduct[]>([]);
+  const [likedProductsData, setLikedProductsData] = useState<LikedProductsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [likingPosts, setLikingPosts] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -26,23 +36,28 @@ const LikedProducts = () => {
       return;
     }
 
-    const loadLikedProducts = async () => {
-      try {
-        const data = await likeService.getLikedProducts();
-        setLikedProducts(data);
-      } catch (error) {
-        toast({
-          title: '오류',
-          description: error instanceof Error ? error.message : '찜한 상품 목록을 불러오는데 실패했습니다.',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    loadLikedProducts(currentPage);
+  }, [user, currentPage, toast]);
 
-    loadLikedProducts();
-  }, [user, toast]);
+  const loadLikedProducts = async (page: number) => {
+    setIsLoading(true);
+    try {
+      const data = await likeService.getLikedProducts(page);
+      setLikedProductsData(data);
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: error instanceof Error ? error.message : '찜한 상품 목록을 불러오는데 실패했습니다.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const formatPrice = (price: number) => {
     return price === 0 ? '무료나눔' : `${price.toLocaleString()}원`;
@@ -66,24 +81,6 @@ const LikedProducts = () => {
     }
   };
 
-  const refreshLikedProducts = async () => {
-    if (!user) return;
-    try {
-      const data = await likeService.getLikedProducts();
-      setLikedProducts(data);
-      toast({
-        title: '새로고침 완료',
-        description: '찜한 상품 목록이 업데이트되었습니다.'
-      });
-    } catch (error) {
-      toast({
-        title: '오류',
-        description: '찜한 상품 목록을 새로고침하는데 실패했습니다.',
-        variant: 'destructive'
-      });
-    }
-  };
-
   const handleUnlike = async (postPk: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -93,8 +90,8 @@ const LikedProducts = () => {
     setLikingPosts(prev => new Set(prev).add(postPk));
     try {
       await likeService.unlikeProduct(postPk);
-      // 찜한 상품 목록에서 제거
-      setLikedProducts(prev => prev.filter(product => product.postPk !== postPk));
+      // 현재 페이지 다시 로드
+      await loadLikedProducts(currentPage);
       toast({
         title: '찜 취소',
         description: '찜한 상품에서 제거되었습니다.'
@@ -150,6 +147,10 @@ const LikedProducts = () => {
     );
   }
 
+  const likedProducts = likedProductsData?.content || [];
+  const totalElements = likedProductsData?.totalElements || 0;
+  const totalPages = likedProductsData?.totalPage || 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <Header />
@@ -166,7 +167,7 @@ const LikedProducts = () => {
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">찜한 상품</h1>
           <p className="text-gray-600">
-            총 {likedProducts.length}개의 상품을 찜했습니다.
+            총 {totalElements}개의 상품을 찜했습니다.
           </p>
         </div>
 
@@ -185,70 +186,107 @@ const LikedProducts = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {likedProducts.map((product) => (
-              <Link 
-                key={product.postPk} 
-                to={`/product/${product.postPk}`}
-                className="block group"
-              >
-                <div className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
-                  <div className="relative">
-                    <img
-                      src={product.thumbnailUrl}
-                      alt={product.title}
-                      className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => handleUnlike(product.postPk, e)}
-                      disabled={likingPosts.has(product.postPk)}
-                      className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white"
-                    >
-                      <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                    </Button>
-                  </div>
-                  
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
-                      {product.title}
-                    </h3>
-                    
-                    <div className="text-lg font-bold text-green-600 mb-3">
-                      {formatPrice(product.hopePrice)}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {likedProducts.map((product) => (
+                <Link 
+                  key={product.postPk} 
+                  to={`/product/${product.postPk}`}
+                  className="block group"
+                >
+                  <div className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
+                    <div className="relative">
+                      <img
+                        src={product.thumbnailUrl}
+                        alt={product.title}
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleUnlike(product.postPk, e)}
+                        disabled={likingPosts.has(product.postPk)}
+                        className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white"
+                      >
+                        <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                      </Button>
                     </div>
                     
-                    <div className="flex items-center space-x-2 text-sm text-gray-500 mb-3">
-                      <MapPin className="h-4 w-4" />
-                      <span>{product.sellerNickname}</span>
-                      <span>•</span>
-                      <span>{product.categoryName}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <Eye className="h-4 w-4" />
-                          <span>{product.viewCount}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Heart className="h-4 w-4" />
-                          <span>{product.likeCount}</span>
-                        </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
+                        {product.title}
+                      </h3>
+                      
+                      <div className="text-lg font-bold text-green-600 mb-3">
+                        {formatPrice(product.hopePrice)}
                       </div>
-                      <Badge className={getStateColor(product.state)}>
-                        {getStateText(product.state)}
-                      </Badge>
+                      
+                      <div className="flex items-center space-x-2 text-sm text-gray-500 mb-3">
+                        <MapPin className="h-4 w-4" />
+                        <span>{product.sellerNickname}</span>
+                        <span>•</span>
+                        <span>{product.categoryName}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <Eye className="h-4 w-4" />
+                            <span>{product.viewCount}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Heart className="h-4 w-4" />
+                            <span>{product.likeCount}</span>
+                          </div>
+                        </div>
+                        <Badge className={getStateColor(product.state)}>
+                          {getStateText(product.state)}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => currentPage > 0 && handlePageChange(currentPage - 1)}
+                        className={currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(i)}
+                          isActive={currentPage === i}
+                          className="cursor-pointer"
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => currentPage < totalPages - 1 && handlePageChange(currentPage + 1)}
+                        className={currentPage === totalPages - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
       </div>
 
