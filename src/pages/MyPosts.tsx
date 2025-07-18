@@ -13,7 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { salePostService, SalePost, MyPostsResponse } from '@/services/salePostService';
+import { salePostService, SalePost, MyPostsResponse, getStateText, getStateColor } from '@/services/salePostService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -21,6 +21,7 @@ const MyPosts = () => {
   const [postsData, setPostsData] = useState<MyPostsResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0); // 0 기반 인덱스로 변경
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const { memberInfo } = useAuth();
 
@@ -71,27 +72,36 @@ const MyPosts = () => {
     }
   };
 
-  const handleStatusChange = (postPk: number, newStatus: string) => {
-    // TODO: API 연동 예정
-    console.log(`게시글 ${postPk}의 상태를 ${newStatus}로 변경`);
-    toast({
-      title: "알림",
-      description: "상태 변경 기능은 곧 구현될 예정입니다.",
-    });
+  const handleStatusChange = async (postPk: number, newStatus: string) => {
+    if (updatingStatus.has(postPk)) return;
+
+    setUpdatingStatus(prev => new Set(prev).add(postPk));
+    
+    try {
+      await salePostService.updateSalePostStatus(postPk, newStatus);
+      toast({
+        title: "성공",
+        description: `상태가 "${getStateText(newStatus)}"로 변경되었습니다.`,
+      });
+      // 목록 새로고침
+      fetchMyPosts(currentPage);
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: error instanceof Error ? error.message : "상태 변경에 실패했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdatingStatus(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(postPk);
+        return newSet;
+      });
+    }
   };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'S': return '판매중';
-      case 'H': return '판매 보류';
-      case 'R': return '예약중';
-      case 'C': return '판매 완료';
-      default: return '판매중';
-    }
   };
 
   const formatPrice = (price: number) => {
@@ -245,29 +255,40 @@ const MyPosts = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+
+                      {/* 현재 상태 표시 */}
+                      <div className="absolute top-2 left-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStateColor(post.state)}`}>
+                          {getStateText(post.state)}
+                        </span>
+                      </div>
                     </div>
 
                     {/* 판매 상태 선택 */}
                     <div className="mb-3">
                       <Select 
-                        defaultValue="S"
+                        value={post.state}
                         onValueChange={(value) => handleStatusChange(post.postPk, value)}
+                        disabled={updatingStatus.has(post.postPk)}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="판매 상태 선택" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="S">판매중</SelectItem>
-                          <SelectItem value="H">판매 보류</SelectItem>
+                          <SelectItem value="H">판매보류</SelectItem>
                           <SelectItem value="R">예약중</SelectItem>
                           <SelectItem 
                             value="C" 
                             className="bg-orange-100 text-orange-800 font-semibold hover:bg-orange-200 focus:bg-orange-200 data-[state=checked]:bg-orange-200"
                           >
-                            판매 완료
+                            판매완료
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      {updatingStatus.has(post.postPk) && (
+                        <p className="text-xs text-gray-500 mt-1">상태 변경 중...</p>
+                      )}
                     </div>
 
                     <Link to={`/product/${post.postPk}`}>

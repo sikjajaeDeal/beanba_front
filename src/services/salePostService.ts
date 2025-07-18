@@ -1,3 +1,4 @@
+
 import { authService } from './authService';
 
 export interface SalePostCreateRequest {
@@ -45,6 +46,27 @@ export interface SalePostsResponse {
 }
 
 const API_BASE_URL = 'http://localhost:8080/api';
+
+// 상태 변환 함수들
+export const getStateText = (state: string) => {
+  switch (state) {
+    case 'S': return '판매중';
+    case 'H': return '판매보류';
+    case 'R': return '예약중';
+    case 'C': return '판매완료';
+    default: return '판매중';
+  }
+};
+
+export const getStateColor = (state: string) => {
+  switch (state) {
+    case 'S': return 'bg-green-100 text-green-800';
+    case 'H': return 'bg-yellow-100 text-yellow-800';
+    case 'R': return 'bg-blue-100 text-blue-800';
+    case 'C': return 'bg-gray-100 text-gray-800';
+    default: return 'bg-green-100 text-green-800';
+  }
+};
 
 export const salePostService = {
   // 상품 등록
@@ -159,6 +181,36 @@ export const salePostService = {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || '게시글 삭제에 실패했습니다.');
+    }
+  },
+
+  // 판매 상태 변경 (토큰 필요)
+  updateSalePostStatus: async (postPk: number, status: string, buyerPk?: number): Promise<void> => {
+    const token = authService.getAccessToken();
+    
+    if (!token) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const params = new URLSearchParams({
+      status: status
+    });
+    
+    if (buyerPk) {
+      params.append('buyerPk', buyerPk.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/sale-post/${postPk}/status?${params.toString()}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || '상태 변경에 실패했습니다.');
     }
   },
 };

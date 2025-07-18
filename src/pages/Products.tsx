@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Eye, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { salePostService, SalePost, SalePostsResponse } from '@/services/salePostService';
+import { salePostService, SalePost, SalePostsResponse, getStateText, getStateColor } from '@/services/salePostService';
 import { likeService } from '@/services/likeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -91,24 +92,6 @@ const Products = () => {
       month: 'short',
       day: 'numeric'
     });
-  };
-
-  const getStateText = (state: string) => {
-    switch (state) {
-      case 'S': return '판매중';
-      case 'C': return '거래완료';
-      case 'R': return '예약중';
-      default: return '알 수 없음';
-    }
-  };
-
-  const getStateColor = (state: string) => {
-    switch (state) {
-      case 'S': return 'bg-green-100 text-green-800';
-      case 'C': return 'bg-gray-100 text-gray-800';
-      case 'R': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
   };
 
   const handleLike = async (postPk: number, e: React.MouseEvent) => {

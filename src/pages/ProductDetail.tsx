@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import KakaoMap from '@/components/KakaoMap';
 import Header from '@/components/Header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductDetail, likeProduct, unlikeProduct } from '@/lib/api';
+import { getStateText, getStateColor } from '@/services/salePostService';
 import { useAuth } from '@/contexts/AuthContext';
 
 const ProductDetail = () => {
@@ -86,24 +88,6 @@ const ProductDetail = () => {
       case '과일류': return 'bg-red-100 text-red-800';
       case '축산물': return 'bg-orange-100 text-orange-800';
       case '수산물': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStateText = (state: string) => {
-    switch (state) {
-      case 'S': return '판매중';
-      case 'C': return '거래완료';
-      case 'R': return '예약중';
-      default: return '상태불명';
-    }
-  };
-
-  const getStateColor = (state: string) => {
-    switch (state) {
-      case 'S': return 'bg-green-100 text-green-800';
-      case 'C': return 'bg-gray-100 text-gray-800';
-      case 'R': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -226,7 +210,7 @@ const ProductDetail = () => {
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(product.categoryName)}`}>
                   {product.categoryName}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStateColor(product.state)}`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStateColor(product.state)} ring-2 ring-current ring-opacity-20`}>
                   {getStateText(product.state)}
                 </span>
                 <span className="text-2xl font-bold text-green-600">
@@ -286,8 +270,9 @@ const ProductDetail = () => {
               <Button 
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 size="lg"
+                disabled={product.state === 'C'}
               >
-                판매자에게 연락하기
+                {product.state === 'C' ? '판매완료' : '판매자에게 연락하기'}
               </Button>
               <Button 
                 variant="outline" 
