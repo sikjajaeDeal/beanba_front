@@ -1,13 +1,10 @@
-
 import { authService } from './authService';
 
-export interface SalePostRequest {
+export interface SalePostCreateRequest {
   categoryPk: number;
   title: string;
   content: string;
   hopePrice: number;
-  latitude: number;
-  longitude: number;
 }
 
 export interface SalePost {
@@ -51,7 +48,7 @@ const API_BASE_URL = 'http://localhost:8080/api';
 
 export const salePostService = {
   // 상품 등록
-  createSalePost: async (salePostRequest: SalePostRequest, images: File[]): Promise<void> => {
+  createSalePost: async (salePostCreateRequest: SalePostCreateRequest, images: File[]): Promise<void> => {
     const token = authService.getAccessToken();
     
     if (!token) {
@@ -60,11 +57,11 @@ export const salePostService = {
 
     const formData = new FormData();
     
-    // salePostRequest를 JSON 문자열로 변환하여 추가
-    const jsonBlob = new Blob([JSON.stringify(salePostRequest)], {
+    // salePostCreateRequest를 JSON 문자열로 변환하여 추가
+    const jsonBlob = new Blob([JSON.stringify(salePostCreateRequest)], {
       type: 'application/json'
     });
-    formData.append('salePostRequest', jsonBlob);
+    formData.append('salePostCreateRequest', jsonBlob);
     
     // 이미지 파일들 추가
     images.forEach((image) => {

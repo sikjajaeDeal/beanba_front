@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,9 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, Package, DollarSign } from 'lucide-react';
-import { salePostService, SalePostRequest } from '@/services/salePostService';
+import { salePostService, SalePostCreateRequest } from '@/services/salePostService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { authService } from '@/services/authService';
+import KakaoMap from '@/components/KakaoMap';
 
 const Sell = () => {
   const navigate = useNavigate();
@@ -19,15 +22,38 @@ const Sell = () => {
   const { isLoggedIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [userLocation, setUserLocation] = useState({
+    latitude: 37.5636,
+    longitude: 126.9975
+  });
+  const [currentAddress, setCurrentAddress] = useState<string>('');
   
   const [formData, setFormData] = useState({
     title: '',
     categoryPk: '',
     content: '',
-    hopePrice: '',
-    latitude: '37.123456', // 기본값 설정 (회원가입 정보에서 가져올 예정)
-    longitude: '127.654321' // 기본값 설정 (회원가입 정보에서 가져올 예정)
+    hopePrice: ''
   });
+
+  // 사용자 위치 정보 가져오기
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      if (!isLoggedIn) return;
+      
+      try {
+        const memberInfo = await authService.getMemberInfoFromServer();
+        setUserLocation({
+          latitude: memberInfo.latitude,
+          longitude: memberInfo.longitude
+        });
+      } catch (error) {
+        console.error('사용자 위치 정보 가져오기 실패:', error);
+        // 기본 위치 사용
+      }
+    };
+
+    fetchUserLocation();
+  }, [isLoggedIn]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -44,6 +70,10 @@ const Sell = () => {
   const removeImage = (index: number) => {
     const newImages = selectedImages.filter((_, i) => i !== index);
     setSelectedImages(newImages);
+  };
+
+  const handleAddressChange = (address: string) => {
+    setCurrentAddress(address);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,16 +101,14 @@ const Sell = () => {
     setIsLoading(true);
 
     try {
-      const salePostRequest: SalePostRequest = {
+      const salePostCreateRequest: SalePostCreateRequest = {
         categoryPk: parseInt(formData.categoryPk),
         title: formData.title,
         content: formData.content,
-        hopePrice: parseInt(formData.hopePrice),
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude)
+        hopePrice: parseInt(formData.hopePrice)
       };
 
-      await salePostService.createSalePost(salePostRequest, selectedImages);
+      await salePostService.createSalePost(salePostCreateRequest, selectedImages);
 
       toast({
         title: '등록 완료',
@@ -192,8 +220,24 @@ const Sell = () => {
                 {/* Map Section */}
                 <div>
                   <Label>판매 위치</Label>
-                  <div className="mt-2 h-64 bg-gray-100 rounded-lg flex items-center justify-center border">
-                    <p className="text-gray-500">카카오맵이 여기에 표시됩니다</p>
+                  {currentAddress && (
+                    <div className="mt-2 mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm font-medium text-yellow-800">
+                        📍 현재 등록 위치: <span className="font-bold">{currentAddress}</span>
+                      </p>
+                    </div>
+                  )}
+                  <div className="mt-2 h-64 bg-gray-100 rounded-lg border overflow-hidden">
+                    <KakaoMap
+                      latitude={userLocation.latitude}
+                      longitude={userLocation.longitude}
+                      width="100%"
+                      height="256px"
+                      level={3}
+                      showAddress={true}
+                      onAddressChange={handleAddressChange}
+                      className="w-full h-full"
+                    />
                   </div>
                   <p className="text-sm text-gray-500 mt-2">회원가입 시 등록한 위치를 기반으로 지도가 표시됩니다.</p>
                 </div>
