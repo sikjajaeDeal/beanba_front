@@ -79,6 +79,8 @@ const KakaoMap = ({
           
           const map = new window.kakao.maps.Map(container, options);
           
+          console.log('지도 초기화 완료, 주변 상품 수:', nearbyProducts.length);
+          
           // 현재 위치 마커 (기본 마커)
           if (showCurrentLocationMarker) {
             const currentMarkerPosition = new window.kakao.maps.LatLng(latitude, longitude);
@@ -87,10 +89,13 @@ const KakaoMap = ({
               title: '현재 위치'
             });
             currentMarker.setMap(map);
+            console.log('현재 위치 마커 생성 완료');
           }
 
           // 주변 상품 마커들 생성
-          nearbyProducts.forEach((product) => {
+          nearbyProducts.forEach((product, index) => {
+            console.log(`마커 ${index + 1} 생성 중:`, product.title, product.latitude, product.longitude);
+            
             const markerImageInfo = getMarkerImageBySaleState(product.state);
             
             // 마커 이미지 생성

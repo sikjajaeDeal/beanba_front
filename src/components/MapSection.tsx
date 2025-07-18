@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 import KakaoMap from './KakaoMap';
 import { salePostService, SalePost } from '@/services/salePostService';
+import { authService } from '@/services/authService';
 
 const MapSection = () => {
   const [currentAddress, setCurrentAddress] = useState<string | null>(null);
@@ -52,6 +53,8 @@ const MapSection = () => {
   const searchNearbyProducts = async (latitude: number, longitude: number) => {
     setIsLoadingProducts(true);
     try {
+      const token = authService.getAccessToken();
+      
       const searchRequest = {
         latitude,
         longitude,
@@ -64,11 +67,29 @@ const MapSection = () => {
         size: 100
       };
 
-      const response = await salePostService.searchByLocation(searchRequest);
-      setNearbyProducts(response.content);
-      console.log('주변 상품:', response.content);
+      console.log('API 요청 시작:', searchRequest);
+      
+      const response = await fetch('http://localhost:8080/api/sale-post/elasticsearch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify(searchRequest),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || '주변 상품 검색에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      console.log('API 응답 성공:', data);
+      
+      setNearbyProducts(data.content || []);
     } catch (error) {
       console.error('주변 상품 검색 실패:', error);
+      setNearbyProducts([]);
     } finally {
       setIsLoadingProducts(false);
     }
