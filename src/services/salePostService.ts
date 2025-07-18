@@ -1,4 +1,3 @@
-
 import { authService } from './authService';
 
 export interface SalePostCreateRequest {
@@ -43,6 +42,18 @@ export interface SalePostsResponse {
   totalElements: number;
   totalPage: number;
   last: boolean;
+}
+
+export interface LocationSearchRequest {
+  latitude: number;
+  longitude: number;
+  minPrice: number;
+  maxPrice: number;
+  keyword: string;
+  distance: number;
+  categoryPk: number | null;
+  page: number;
+  size: number;
 }
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -212,5 +223,23 @@ export const salePostService = {
       const errorText = await response.text();
       throw new Error(errorText || '상태 변경에 실패했습니다.');
     }
+  },
+
+  // 위치 기반 상품 검색
+  searchByLocation: async (searchRequest: LocationSearchRequest): Promise<SalePostsResponse> => {
+    const response = await fetch(`${API_BASE_URL}/sale-post/elasticsearch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(searchRequest),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || '위치 기반 상품 검색에 실패했습니다.');
+    }
+
+    return response.json();
   },
 };
