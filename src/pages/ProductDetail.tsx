@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductDetail, likeProduct, unlikeProduct } from '@/lib/api';
 import { getStateText, getStateColor } from '@/services/salePostService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const ProductDetail = () => {
   const { postPk } = useParams<{ postPk: string }>();
@@ -18,6 +18,7 @@ const ProductDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', postPk],
@@ -30,6 +31,10 @@ const ProductDetail = () => {
     onSuccess: () => {
       setIsLiked(true);
       queryClient.invalidateQueries({ queryKey: ['product', postPk] });
+      toast({
+        title: '찜 완료',
+        description: '상품이 찜 목록에 추가되었습니다.',
+      });
     },
   });
 
@@ -38,12 +43,20 @@ const ProductDetail = () => {
     onSuccess: () => {
       setIsLiked(false);
       queryClient.invalidateQueries({ queryKey: ['product', postPk] });
+      toast({
+        title: '찜 해제',
+        description: '상품이 찜 목록에서 제거되었습니다.',
+      });
     },
   });
 
   const handleToggleLike = async () => {
     if (!isLoggedIn) {
-      alert('찜하기는 로그인 후 이용 가능합니다.');
+      toast({
+        title: '로그인 필요',
+        description: '찜하기는 로그인 후 이용 가능합니다.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -64,8 +77,11 @@ const ProductDetail = () => {
     }
   }, [product]);
 
+  // Filter out empty image URLs
+  const validImageUrls = product?.imageUrls?.filter(url => url && url.trim() !== '') || [];
+
   const nextImage = () => {
-    if (product?.imageUrls && currentImageIndex < product.imageUrls.length - 1) {
+    if (validImageUrls && currentImageIndex < validImageUrls.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
     }
   };
@@ -135,18 +151,18 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 상품 이미지 캐러셀 */}
           <div className="bg-white rounded-lg shadow-lg p-6">
-            {product.imageUrls && product.imageUrls.length > 0 ? (
+            {validImageUrls && validImageUrls.length > 0 ? (
               <div className="space-y-4">
                 {/* 메인 이미지 */}
                 <div className="relative">
                   <img
-                    src={product.imageUrls[currentImageIndex]}
+                    src={validImageUrls[currentImageIndex]}
                     alt={`${product.title} - ${currentImageIndex + 1}`}
                     className="w-full h-96 object-cover rounded-lg"
                   />
                   
                   {/* 이미지 네비게이션 */}
-                  {product.imageUrls.length > 1 && (
+                  {validImageUrls.length > 1 && (
                     <>
                       <button
                         onClick={prevImage}
@@ -157,7 +173,7 @@ const ProductDetail = () => {
                       </button>
                       <button
                         onClick={nextImage}
-                        disabled={currentImageIndex === product.imageUrls.length - 1}
+                        disabled={currentImageIndex === validImageUrls.length - 1}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <ChevronRight className="h-5 w-5" />
@@ -165,16 +181,16 @@ const ProductDetail = () => {
                       
                       {/* 이미지 카운터 */}
                       <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                        {currentImageIndex + 1} / {product.imageUrls.length}
+                        {currentImageIndex + 1} / {validImageUrls.length}
                       </div>
                     </>
                   )}
                 </div>
 
                 {/* 썸네일 이미지 리스트 */}
-                {product.imageUrls.length > 1 && (
+                {validImageUrls.length > 1 && (
                   <div className="flex space-x-2 overflow-x-auto pb-2">
-                    {product.imageUrls.map((imageUrl, index) => (
+                    {validImageUrls.map((imageUrl, index) => (
                       <button
                         key={index}
                         onClick={() => selectImage(index)}

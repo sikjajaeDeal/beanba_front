@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Leaf, Users, Award } from 'lucide-react';
@@ -50,8 +49,7 @@ const HeroSection = () => {
               </Button>
               <Button 
                 size="lg" 
-                variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-green-700 transition-all transform hover:scale-105"
+                className="bg-white text-green-700 hover:bg-green-50 transition-all transform hover:scale-105"
                 onClick={handleSellClick}
               >
                 판매하기
