@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { SalePost, getStateText } from '@/services/salePostService';
 
@@ -65,6 +64,57 @@ const KakaoMap = ({
     return markerImages[state as keyof typeof markerImages] || markerImages['S'];
   };
 
+  // 카테고리별 마커 이미지 설정
+  const getMarkerImageByCategory = (categoryName: string, state: string) => {
+    // 과일류인 경우 특별한 마커 사용
+    if (categoryName === '과일류') {
+      return {
+        src: '/lovable-uploads/8af9c36c-3264-4152-a2df-2b6f0d28d4e1.png',
+        size: { width: 50, height: 60 },
+        offset: { x: 25, y: 60 }
+      };
+    }
+    
+    // 곡물/잡곡인 경우 특별한 마커 사용
+    if (categoryName === '곡물/잡곡') {
+      return {
+        src: '/lovable-uploads/0bcd5ae3-74b4-418b-8130-e6b2e8cc37f5.png',
+        size: { width: 50, height: 60 },
+        offset: { x: 25, y: 60 }
+      };
+    }
+    
+    // 축산물인 경우 특별한 마커 사용
+    if (categoryName === '축산물') {
+      return {
+        src: '/lovable-uploads/fdbfb3a5-420c-4116-9b05-466e22b5369b.png',
+        size: { width: 50, height: 60 },
+        offset: { x: 25, y: 60 }
+      };
+    }
+    
+    // 수산물인 경우 특별한 마커 사용
+    if (categoryName === '수산물') {
+      return {
+        src: '/lovable-uploads/1cc12391-3841-4915-8787-69636fd0edd1.png',
+        size: { width: 50, height: 60 },
+        offset: { x: 25, y: 60 }
+      };
+    }
+    
+    // 식자제인 경우 특별한 마커 사용
+    if (categoryName === '식자제') {
+      return {
+        src: '/lovable-uploads/e373cd24-1ba7-4a8a-9f7a-0cdbc59d0263.png',
+        size: { width: 50, height: 60 },
+        offset: { x: 25, y: 60 }
+      };
+    }
+    
+    // 다른 카테고리는 기존 상태별 마커 사용
+    return getMarkerImageBySaleState(state);
+  };
+
   useEffect(() => {
     const initializeMap = () => {
       if (window.kakao && window.kakao.maps) {
@@ -95,9 +145,9 @@ const KakaoMap = ({
           // 주변 상품 마커들 생성 (nearbyProducts가 있을 때만)
           if (nearbyProducts.length > 0) {
             nearbyProducts.forEach((product, index) => {
-              console.log(`마커 ${index + 1} 생성 중:`, product.title, product.latitude, product.longitude);
+              console.log(`마커 ${index + 1} 생성 중:`, product.title, product.latitude, product.longitude, '카테고리:', product.categoryName);
               
-              const markerImageInfo = getMarkerImageBySaleState(product.state);
+              const markerImageInfo = getMarkerImageByCategory(product.categoryName, product.state);
               
               // 마커 이미지 생성
               const markerImage = new window.kakao.maps.MarkerImage(
@@ -114,7 +164,6 @@ const KakaoMap = ({
                 image: markerImage
               });
 
-              // 인포윈도우 내용
               const infoWindowContent = `
                 <div style="padding: 10px; width: 200px;">
                   <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold;">${product.title}</h4>
@@ -133,22 +182,18 @@ const KakaoMap = ({
                 </div>
               `;
 
-              // 인포윈도우 생성
               const infoWindow = new window.kakao.maps.InfoWindow({
                 content: infoWindowContent
               });
 
-              // 마커 클릭 이벤트
               window.kakao.maps.event.addListener(marker, 'click', () => {
                 infoWindow.open(map, marker);
               });
 
-              // 마커 마우스오버 이벤트
               window.kakao.maps.event.addListener(marker, 'mouseover', () => {
                 infoWindow.open(map, marker);
               });
 
-              // 마커 마우스아웃 이벤트
               window.kakao.maps.event.addListener(marker, 'mouseout', () => {
                 infoWindow.close();
               });
@@ -177,14 +222,12 @@ const KakaoMap = ({
     };
 
     const loadKakaoMapScript = () => {
-      // 이미 스크립트가 로드되어 있는지 확인
       if (window.kakao && window.kakao.maps) {
         setIsScriptLoaded(true);
         initializeMap();
         return;
       }
 
-      // 이미 스크립트 태그가 있는지 확인
       const existingScript = document.querySelector('script[src*="dapi.kakao.com"]');
       if (existingScript) {
         return;

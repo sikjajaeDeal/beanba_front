@@ -1,54 +1,52 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { chatService } from '@/services/chatService';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface Chat {
-  id: string;
-  userName: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  avatar: string;
-  product: string;
+interface ChattingRoomListItem {
+  chattingRoomPk: number;
+  message: string;
+  messageAt: string;
+  chatWith: number;
+  chatWithNickname: string;
+  readYn: string;
+  postPk: number;
 }
 
 interface ChatListProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectChat: (chat: Chat) => void;
+  onSelectChat: (roomPk: number, chatWith: number, nickname: string, postPk: number) => void;
 }
 
 const ChatList = ({ isOpen, onClose, onSelectChat }: ChatListProps) => {
-  const mockChats: Chat[] = [
-    {
-      id: '1',
-      userName: '김농부',
-      lastMessage: '쌀 언제 받으러 오실 수 있나요?',
-      time: '오후 2:30',
-      unread: 2,
-      avatar: 'photo-1472099645785-5658abf4ff4e',
-      product: '유기농 쌀 20kg'
-    },
-    {
-      id: '2',
-      userName: '이농장',
-      lastMessage: '토마토 상태 정말 좋습니다!',
-      time: '오후 1:15',
-      unread: 0,
-      avatar: 'photo-1438761681033-6461ffad8d80',
-      product: '방울토마토 5kg'
-    },
-    {
-      id: '3',
-      userName: '박과수원',
-      lastMessage: '사과 할인 가능한지 문의드려요',
-      time: '오전 11:20',
-      unread: 1,
-      avatar: 'photo-1500648767791-00dcc994a43e',
-      product: '홍로 사과 10kg'
+  const [chatRooms, setChatRooms] = useState<ChattingRoomListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (isOpen && isLoggedIn) {
+      fetchChatRooms();
     }
-  ];
+  }, [isOpen, isLoggedIn]);
+
+  const fetchChatRooms = async () => {
+    try {
+      setIsLoading(true);
+      const rooms = await chatService.getAllChattingRoomList();
+      setChatRooms(rooms);
+    } catch (error) {
+      console.error('채팅방 리스트 가져오기 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChatClick = (room: ChattingRoomListItem) => {
+    onSelectChat(room.chattingRoomPk, room.chatWith, room.chatWithNickname, room.postPk);
+  };
 
   return (
     <>
@@ -75,38 +73,47 @@ const ChatList = ({ isOpen, onClose, onSelectChat }: ChatListProps) => {
           
           {/* Chat List */}
           <div className="flex-1 overflow-y-auto">
-            {mockChats.map((chat) => (
-              <div
-                key={chat.id}
-                onClick={() => onSelectChat(chat)}
-                className="p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <div className="flex items-start space-x-3">
-                  <img
-                    src={`https://images.unsplash.com/${chat.avatar}?w=40&h=40&fit=crop&crop=face`}
-                    alt={chat.userName}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {chat.userName}
-                      </h3>
-                      <span className="text-xs text-gray-500">{chat.time}</span>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-gray-500">채팅방 목록을 불러오는 중...</div>
+              </div>
+            ) : chatRooms.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-gray-500">채팅방이 없습니다.</div>
+              </div>
+            ) : (
+              chatRooms.map((room) => (
+                <div
+                  key={room.chattingRoomPk}
+                  onClick={() => handleChatClick(room)}
+                  className="p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-green-600" />
                     </div>
-                    <p className="text-xs text-gray-500 mb-1 truncate">{chat.product}</p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
-                      {chat.unread > 0 && (
-                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                          {chat.unread}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {room.chatWithNickname}
+                        </h3>
+                        <span className="text-xs text-gray-500">
+                          {chatService.formatMessageTime(room.messageAt)}
                         </span>
-                      )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600 truncate">{room.message}</p>
+                        {room.readYn === 'N' && (
+                          <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full min-w-[8px] h-5 flex items-center justify-center">
+                            
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
