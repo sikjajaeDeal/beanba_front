@@ -80,6 +80,23 @@ export const getStateColor = (state: string) => {
 };
 
 export const salePostService = {
+  // 인기상품 조회 (좋아요 많은 순)
+  getTopViewPosts: async (): Promise<SalePost[]> => {
+    const response = await fetch(`${API_BASE_URL}/sale-post/top-view`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || '인기상품을 불러오는데 실패했습니다.');
+    }
+
+    return response.json();
+  },
+
   // 상품 등록
   createSalePost: async (salePostCreateRequest: SalePostCreateRequest, images: File[]): Promise<void> => {
     const token = authService.getAccessToken();
