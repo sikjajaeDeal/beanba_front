@@ -27,6 +27,7 @@ interface ChattingRoomListItem {
   chatWithNickname: string;
   readYn: string;
   postPk: number;
+  memberPk: number;
 }
 
 export const chatService = {

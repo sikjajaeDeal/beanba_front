@@ -15,6 +15,7 @@ const ChatButton = () => {
   const [selectedChatWith, setSelectedChatWith] = useState<number | null>(null);
   const [selectedNickname, setSelectedNickname] = useState<string>('');
   const [selectedPostPk, setSelectedPostPk] = useState<number | null>(null);
+  const [selectedMemberPk, setSelectedMemberPk] = useState<number | null>(null);
   const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
   const { isLoggedIn, memberInfo } = useAuth();
   const { toast } = useToast();
@@ -31,19 +32,20 @@ const ChatButton = () => {
     setShowChatList(true);
   };
 
-  const handleSelectChat = async (roomPk: number, chatWith: number, nickname: string, postPk: number) => {
+  const handleSelectChat = async (roomPk: number, chatWith: number, nickname: string, postPk: number, memberPk: number) => {
     if (!memberInfo) return;
 
     try {
-      console.log('채팅방 선택:', { roomPk, chatWith, nickname, postPk });
+      console.log('채팅방 선택:', { roomPk, chatWith, nickname, postPk, memberPk });
       
       setSelectedRoomPk(roomPk);
       setSelectedChatWith(chatWith);
       setSelectedNickname(nickname);
       setSelectedPostPk(postPk);
+      setSelectedMemberPk(memberPk);
       
-      // 웹소켓 연결 - memberId를 number로 변환
-      const ws = await chatService.connectWebSocket(Number(memberInfo.memberId));
+      // 웹소켓 연결 - memberPk 사용
+      const ws = await chatService.connectWebSocket(memberPk);
       setWebSocket(ws);
       
       setShowChatList(false);
@@ -75,6 +77,7 @@ const ChatButton = () => {
     setSelectedChatWith(null);
     setSelectedNickname('');
     setSelectedPostPk(null);
+    setSelectedMemberPk(null);
     if (webSocket) {
       webSocket.close();
       setWebSocket(null);
@@ -100,7 +103,7 @@ const ChatButton = () => {
       />
 
       {/* Chat Window */}
-      {showChatWindow && selectedRoomPk && selectedChatWith && selectedPostPk && (
+      {showChatWindow && selectedRoomPk && selectedChatWith && selectedPostPk && selectedMemberPk && (
         <ProductChatWindow
           isOpen={showChatWindow}
           onClose={handleCloseAll}

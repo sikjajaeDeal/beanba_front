@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useRef, useState } from 'react';
 import { SalePost, getStateText } from '@/services/salePostService';
 
@@ -66,48 +68,66 @@ const KakaoMap = ({
 
   // 카테고리별 마커 이미지 설정
   const getMarkerImageByCategory = (categoryName: string, state: string) => {
+    // 채소류인 경우 새로운 마커 사용
+    if (categoryName === '채소류') {
+      return {
+        src: '/lovable-uploads/ee587706-0a7b-42c4-a6f6-46d757bf1083.png',
+        size: { width: 30, height: 40 },
+        offset: { x: 15, y: 60 }
+      };
+    }
+    
     // 과일류인 경우 특별한 마커 사용
     if (categoryName === '과일류') {
       return {
-        src: '/lovable-uploads/8af9c36c-3264-4152-a2df-2b6f0d28d4e1.png',
-        size: { width: 50, height: 60 },
-        offset: { x: 25, y: 60 }
+        src: '/lovable-uploads/7133365a-5ec2-4ad2-a4dc-66e242fcb315.png',
+        size: { width: 30, height: 40 },
+        offset: { x: 15, y: 60 }
       };
     }
     
     // 곡물/잡곡인 경우 특별한 마커 사용
     if (categoryName === '곡물/잡곡') {
       return {
-        src: '/lovable-uploads/0bcd5ae3-74b4-418b-8130-e6b2e8cc37f5.png',
-        size: { width: 50, height: 60 },
-        offset: { x: 25, y: 60 }
+        src: '/lovable-uploads/9656cfba-69fb-4894-9f7b-3344ce8f760c.png',
+        size: { width: 30, height: 40 },
+        offset: { x: 15, y: 60 }
       };
     }
     
     // 축산물인 경우 특별한 마커 사용
     if (categoryName === '축산물') {
       return {
-        src: '/lovable-uploads/fdbfb3a5-420c-4116-9b05-466e22b5369b.png',
-        size: { width: 50, height: 60 },
-        offset: { x: 25, y: 60 }
+        src: '/lovable-uploads/4f424937-c953-4c13-b4fb-76c5ae36ce80.png',
+        size: { width: 30, height: 40 },
+        offset: { x: 15, y: 60 }
       };
     }
     
     // 수산물인 경우 특별한 마커 사용
     if (categoryName === '수산물') {
       return {
-        src: '/lovable-uploads/1cc12391-3841-4915-8787-69636fd0edd1.png',
-        size: { width: 50, height: 60 },
-        offset: { x: 25, y: 60 }
+        src: '/lovable-uploads/f5be1cb1-e111-4c88-9035-23b3974280a1.png',
+        size: { width: 30, height: 40 },
+        offset: { x: 15, y: 60 }
       };
     }
     
-    // 식자제인 경우 특별한 마커 사용
-    if (categoryName === '식자제') {
+    // 유제품인 경우 특별한 마커 사용
+    if (categoryName === '유제품') {
       return {
-        src: '/lovable-uploads/e373cd24-1ba7-4a8a-9f7a-0cdbc59d0263.png',
-        size: { width: 50, height: 60 },
-        offset: { x: 25, y: 60 }
+        src: '/lovable-uploads/55bd68c0-9ca5-4a3a-8c11-18e4a6f849e4.png',
+        size: { width: 30, height: 40 },
+        offset: { x: 15, y: 60 }
+      };
+    }
+    
+    // 식자재인 경우 특별한 마커 사용
+    if (categoryName === '식자재') {
+      return {
+        src: '/lovable-uploads/92b9e6ed-b9d6-419e-85b0-154c6e91e97b.png',
+        size: { width: 30, height: 40 },
+        offset: { x: 15, y: 60 }
       };
     }
     
@@ -278,3 +298,4 @@ const KakaoMap = ({
 };
 
 export default KakaoMap;
+

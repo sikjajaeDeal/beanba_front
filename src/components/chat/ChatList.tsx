@@ -13,12 +13,13 @@ interface ChattingRoomListItem {
   chatWithNickname: string;
   readYn: string;
   postPk: number;
+  memberPk: number;
 }
 
 interface ChatListProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectChat: (roomPk: number, chatWith: number, nickname: string, postPk: number) => void;
+  onSelectChat: (roomPk: number, chatWith: number, nickname: string, postPk: number, memberPk: number) => void;
 }
 
 const ChatList = ({ isOpen, onClose, onSelectChat }: ChatListProps) => {
@@ -45,7 +46,7 @@ const ChatList = ({ isOpen, onClose, onSelectChat }: ChatListProps) => {
   };
 
   const handleChatClick = (room: ChattingRoomListItem) => {
-    onSelectChat(room.chattingRoomPk, room.chatWith, room.chatWithNickname, room.postPk);
+    onSelectChat(room.chattingRoomPk, room.chatWith, room.chatWithNickname, room.postPk, room.memberPk);
   };
 
   return (

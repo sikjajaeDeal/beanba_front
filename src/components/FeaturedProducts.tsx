@@ -120,18 +120,8 @@ const FeaturedProducts = () => {
                 
                 <div className="flex items-center justify-between">
                   <span className="text-xl font-bold text-green-600">
-                    {product.hopePrice > 0 ? `${formatPrice(product.hopePrice)}원` : '가격문의'}
+                    {product.hopePrice === 0 ? '무료나눔' : `${formatPrice(product.hopePrice)}원`}
                   </span>
-                  <Button 
-                    size="sm" 
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleProductClick(product.postPk);
-                    }}
-                  >
-                    문의하기
-                  </Button>
                 </div>
                 
                 <div className="mt-2 text-sm text-gray-500">
