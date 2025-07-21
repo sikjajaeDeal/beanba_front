@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { MapPin, User, Package, Heart, Eye, Calendar, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import KakaoMap from '@/components/KakaoMap';
 import Header from '@/components/Header';
+import ProductChatWindow from '@/components/chat/ProductChatWindow';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductDetail, likeProduct, unlikeProduct } from '@/lib/api';
 import { getStateText, getStateColor } from '@/services/salePostService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { chatService } from '@/services/chatService';
 
 const ProductDetail = () => {
   const { postPk } = useParams<{ postPk: string }>();
@@ -19,6 +21,12 @@ const ProductDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // 채팅 관련 상태
+  const [showChatWindow, setShowChatWindow] = useState(false);
+  const [chatRoomPk, setChatRoomPk] = useState<number | null>(null);
+  const [chatMemberPk, setChatMemberPk] = useState<number | null>(null);
+  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', postPk],
@@ -69,6 +77,59 @@ const ProductDetail = () => {
     }
   };
 
+  const handleContactSeller = async () => {
+    if (!isLoggedIn) {
+      toast({
+        title: '로그인 필요',
+        description: '판매자와 채팅하려면 로그인이 필요합니다.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!product) return;
+
+    try {
+      toast({
+        title: '채팅방 연결 중',
+        description: '잠시만 기다려주세요...',
+      });
+
+      // 1. 채팅방 생성
+      const roomResponse = await chatService.openChattingRoom(product.postPk);
+      setChatRoomPk(roomResponse.roomPk);
+      setChatMemberPk(roomResponse.memberPk);
+
+      // 2. 웹소켓 연결
+      const ws = await chatService.connectWebSocket(roomResponse.memberPk);
+      setWebSocket(ws);
+
+      // 3. 채팅창 표시
+      setShowChatWindow(true);
+
+      toast({
+        title: '채팅방 연결 완료',
+        description: '판매자와 채팅을 시작할 수 있습니다.',
+      });
+
+    } catch (error) {
+      console.error('채팅방 연결 실패:', error);
+      toast({
+        title: '채팅방 연결 실패',
+        description: '다시 시도해주세요.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleCloseChatWindow = () => {
+    setShowChatWindow(false);
+    if (webSocket) {
+      webSocket.close();
+      setWebSocket(null);
+    }
+  };
+
   const likeLoading = likeMutation.isPending || unlikeMutation.isPending;
 
   useEffect(() => {
@@ -77,7 +138,6 @@ const ProductDetail = () => {
     }
   }, [product]);
 
-  // Filter out empty image URLs
   const validImageUrls = product?.imageUrls?.filter(url => url && url.trim() !== '') || [];
 
   const nextImage = () => {
@@ -149,7 +209,6 @@ const ProductDetail = () => {
       
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 상품 이미지 캐러셀 */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             {validImageUrls && validImageUrls.length > 0 ? (
               <div className="space-y-4">
@@ -217,7 +276,6 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* 상품 정보 */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.title}</h1>
@@ -287,6 +345,7 @@ const ProductDetail = () => {
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 size="lg"
                 disabled={product.state === 'C'}
+                onClick={handleContactSeller}
               >
                 {product.state === 'C' ? '판매완료' : '판매자에게 연락하기'}
               </Button>
@@ -304,7 +363,6 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* 판매 위치 지도 */}
         <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
             <MapPin className="h-6 w-6 mr-2" />
@@ -330,6 +388,19 @@ const ProductDetail = () => {
           />
         </div>
       </div>
+
+      {showChatWindow && chatRoomPk && chatMemberPk && (
+        <ProductChatWindow
+          isOpen={showChatWindow}
+          onClose={handleCloseChatWindow}
+          roomPk={chatRoomPk}
+          memberPk={chatMemberPk}
+          postPk={product.postPk}
+          productTitle={product.title}
+          sellerName={product.sellerNickname}
+          webSocket={webSocket}
+        />
+      )}
     </div>
   );
 };
