@@ -1,3 +1,4 @@
+
 import { authService } from './authService';
 
 export interface SalePostCreateRequest {
@@ -10,6 +11,7 @@ export interface SalePostCreateRequest {
 export interface SalePost {
   postPk: number;
   sellerNickname: string;
+  sellerPk: number; // Add missing sellerPk property
   categoryName: string;
   title: string;
   content: string;

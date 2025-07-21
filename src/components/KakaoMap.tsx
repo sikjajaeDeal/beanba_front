@@ -1,6 +1,5 @@
-
-
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SalePost, getStateText } from '@/services/salePostService';
 
 interface KakaoMapProps {
@@ -37,6 +36,7 @@ const KakaoMap = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const [address, setAddress] = useState<string>('');
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const navigate = useNavigate();
 
   // 상태별 마커 이미지 설정
   const getMarkerImageBySaleState = (state: string) => {
@@ -135,6 +135,11 @@ const KakaoMap = ({
     return getMarkerImageBySaleState(state);
   };
 
+  // 상품 상세 페이지로 이동하는 함수
+  const navigateToProductDetail = (postPk: number) => {
+    navigate(`/product/${postPk}`);
+  };
+
   useEffect(() => {
     const initializeMap = () => {
       if (window.kakao && window.kakao.maps) {
@@ -181,11 +186,12 @@ const KakaoMap = ({
                 map: map,
                 position: new window.kakao.maps.LatLng(product.latitude, product.longitude),
                 title: product.title,
-                image: markerImage
+                image: markerImage,
+                clickable: true // 마커 클릭 이벤트 활성화
               });
 
               const infoWindowContent = `
-                <div style="padding: 10px; width: 200px;">
+                <div style="padding: 10px; width: 200px; cursor: pointer;">
                   <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold;">${product.title}</h4>
                   <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">${product.categoryName}</p>
                   <p style="margin: 0 0 5px 0; font-size: 12px; color: #333;">가격: ${product.hopePrice.toLocaleString()}원</p>
@@ -196,27 +202,50 @@ const KakaoMap = ({
                       ${getStateText(product.state)}
                     </span>
                   </p>
-                  <p style="margin: 0; font-size: 11px; color: #666;">
+                  <p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">
                     조회 ${product.viewCount} · 찜 ${product.likeCount}
+                  </p>
+                  <p style="margin: 0; font-size: 11px; color: #1e40af; font-weight: bold;">
+                    클릭하여 상세보기 →
                   </p>
                 </div>
               `;
 
               const infoWindow = new window.kakao.maps.InfoWindow({
-                content: infoWindowContent
+                content: infoWindowContent,
+                removable: true
               });
 
+              // 마커 클릭 이벤트 - 상품 상세 페이지로 이동
               window.kakao.maps.event.addListener(marker, 'click', () => {
-                infoWindow.open(map, marker);
+                console.log('마커 클릭:', product.title, 'postPk:', product.postPk);
+                navigateToProductDetail(product.postPk);
               });
 
+              // 마우스 오버 시 인포윈도우 표시
               window.kakao.maps.event.addListener(marker, 'mouseover', () => {
                 infoWindow.open(map, marker);
               });
 
+              // 마우스 아웃 시 인포윈도우 닫기
               window.kakao.maps.event.addListener(marker, 'mouseout', () => {
                 infoWindow.close();
               });
+
+              // 인포윈도우 클릭 시에도 상품 상세 페이지로 이동
+              const infoWindowElement = infoWindow.getContent();
+              if (infoWindowElement) {
+                // DOM이 생성된 후 클릭 이벤트 추가
+                setTimeout(() => {
+                  const infoDiv = document.querySelector('.infowindow');
+                  if (infoDiv) {
+                    infoDiv.addEventListener('click', () => {
+                      console.log('인포윈도우 클릭:', product.title, 'postPk:', product.postPk);
+                      navigateToProductDetail(product.postPk);
+                    });
+                  }
+                }, 100);
+              }
             });
           }
 
@@ -271,7 +300,7 @@ const KakaoMap = ({
     };
 
     loadKakaoMapScript();
-  }, [latitude, longitude, level, showAddress, onAddressChange, showCurrentLocationMarker, nearbyProducts]);
+  }, [latitude, longitude, level, showAddress, onAddressChange, showCurrentLocationMarker, nearbyProducts, navigate]);
 
   return (
     <div className="relative">
@@ -298,4 +327,3 @@ const KakaoMap = ({
 };
 
 export default KakaoMap;
-

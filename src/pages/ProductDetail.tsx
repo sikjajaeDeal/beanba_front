@@ -11,6 +11,7 @@ import { getStateText, getStateColor } from '@/services/salePostService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { chatService } from '@/services/chatService';
+import { Client } from '@stomp/stompjs';
 
 const ProductDetail = () => {
   const { postPk } = useParams<{ postPk: string }>();
@@ -26,7 +27,8 @@ const ProductDetail = () => {
   const [showChatWindow, setShowChatWindow] = useState(false);
   const [chatRoomPk, setChatRoomPk] = useState<number | null>(null);
   const [chatMemberPk, setChatMemberPk] = useState<number | null>(null);
-  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+  const [chatWith, setChatWith] = useState<number | null>(null);
+  const [stompClient, setStompClient] = useState<Client | null>(null);
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', postPk],
@@ -99,10 +101,11 @@ const ProductDetail = () => {
       const roomResponse = await chatService.openChattingRoom(product.postPk);
       setChatRoomPk(roomResponse.roomPk);
       setChatMemberPk(roomResponse.memberPk);
+      setChatWith(product.sellerPk);
 
-      // 2. 웹소켓 연결
-      const ws = await chatService.connectWebSocket(roomResponse.memberPk);
-      setWebSocket(ws);
+      // 2. STOMP 클라이언트 생성 및 연결
+      const client = await chatService.createStompClient(roomResponse.memberPk);
+      setStompClient(client);
 
       // 3. 채팅창 표시
       setShowChatWindow(true);
@@ -124,9 +127,9 @@ const ProductDetail = () => {
 
   const handleCloseChatWindow = () => {
     setShowChatWindow(false);
-    if (webSocket) {
-      webSocket.close();
-      setWebSocket(null);
+    if (stompClient) {
+      stompClient.deactivate();
+      setStompClient(null);
     }
   };
 
@@ -212,7 +215,6 @@ const ProductDetail = () => {
           <div className="bg-white rounded-lg shadow-lg p-6">
             {validImageUrls && validImageUrls.length > 0 ? (
               <div className="space-y-4">
-                {/* 메인 이미지 */}
                 <div className="relative">
                   <img
                     src={validImageUrls[currentImageIndex]}
@@ -220,7 +222,6 @@ const ProductDetail = () => {
                     className="w-full h-96 object-cover rounded-lg"
                   />
                   
-                  {/* 이미지 네비게이션 */}
                   {validImageUrls.length > 1 && (
                     <>
                       <button
@@ -238,7 +239,6 @@ const ProductDetail = () => {
                         <ChevronRight className="h-5 w-5" />
                       </button>
                       
-                      {/* 이미지 카운터 */}
                       <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
                         {currentImageIndex + 1} / {validImageUrls.length}
                       </div>
@@ -246,7 +246,6 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                {/* 썸네일 이미지 리스트 */}
                 {validImageUrls.length > 1 && (
                   <div className="flex space-x-2 overflow-x-auto pb-2">
                     {validImageUrls.map((imageUrl, index) => (
@@ -292,7 +291,6 @@ const ProductDetail = () => {
                 </span>
               </div>
 
-              {/* 조회수, 좋아요 수 */}
               <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
                 <div className="flex items-center space-x-1">
                   <Eye className="h-4 w-4" />
@@ -304,7 +302,6 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* 등록일, 상태변경일 */}
               <div className="text-sm text-gray-600 space-y-1 mb-4">
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
@@ -317,7 +314,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* 판매자 정보 */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                 <User className="h-5 w-5 mr-2" />
@@ -328,7 +324,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* 상품 설명 */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                 <Package className="h-5 w-5 mr-2" />
@@ -339,7 +334,6 @@ const ProductDetail = () => {
               </p>
             </div>
 
-            {/* 액션 버튼 */}
             <div className="space-y-3">
               <Button 
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -389,16 +383,17 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {showChatWindow && chatRoomPk && chatMemberPk && (
+      {showChatWindow && chatRoomPk && chatMemberPk && chatWith && (
         <ProductChatWindow
           isOpen={showChatWindow}
           onClose={handleCloseChatWindow}
           roomPk={chatRoomPk}
           memberPk={chatMemberPk}
+          chatWith={chatWith}
           postPk={product.postPk}
           productTitle={product.title}
           sellerName={product.sellerNickname}
-          webSocket={webSocket}
+          stompClient={stompClient}
         />
       )}
     </div>

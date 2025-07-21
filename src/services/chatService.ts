@@ -1,5 +1,6 @@
 
 import { authService } from './authService';
+import { Client } from '@stomp/stompjs';
 
 interface OpenChattingRoomRequest {
   postPk: number;
@@ -76,26 +77,67 @@ export const chatService = {
     return data || [];
   },
 
-  async connectWebSocket(memberPk: number): Promise<WebSocket> {
-    const wsUrl = `ws://localhost:8080/api/ws-chat?memberPk=${memberPk}`;
-    
+  createStompClient(memberPk: number): Promise<Client> {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(wsUrl);
-      
-      ws.onopen = () => {
-        console.log('웹소켓 연결 성공');
-        resolve(ws);
+      const client = new Client({
+        brokerURL: `ws://localhost:8080/api/ws-chat?memberPk=${memberPk}`,
+        connectHeaders: {},
+        debug: (str) => {
+          console.log('STOMP Debug:', str);
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+      });
+
+      client.onConnect = () => {
+        console.log('STOMP 클라이언트 연결 성공');
+        resolve(client);
       };
-      
-      ws.onerror = (error) => {
-        console.error('웹소켓 연결 실패:', error);
-        reject(new Error('웹소켓 연결에 실패했습니다.'));
+
+      client.onStompError = (frame) => {
+        console.error('STOMP 에러:', frame.headers['message']);
+        console.error('추가 정보:', frame.body);
+        reject(new Error('STOMP 연결에 실패했습니다.'));
       };
-      
-      ws.onclose = () => {
+
+      client.onWebSocketClose = () => {
         console.log('웹소켓 연결 종료');
       };
+
+      client.activate();
     });
+  },
+
+  subscribeToRoom(client: Client, roomPk: number, onMessage: (message: any) => void): void {
+    const destination = `/topic/room.${roomPk}`;
+    
+    client.subscribe(destination, (message) => {
+      try {
+        const data = JSON.parse(message.body);
+        console.log('구독으로 받은 메시지:', data);
+        onMessage(data);
+      } catch (error) {
+        console.error('메시지 파싱 오류:', error);
+      }
+    });
+    
+    console.log(`채팅방 구독: ${destination}`);
+  },
+
+  sendMessage(client: Client, roomPk: number, postPk: number, message: string): void {
+    const messageData = {
+      roomPk,
+      postPk,
+      message
+    };
+    
+    client.publish({
+      destination: '/api/chatting/sendMessage',
+      body: JSON.stringify(messageData)
+    });
+    
+    console.log('STOMP 메시지 전송:', messageData);
   },
 
   async getMessageHistory(roomPk: number): Promise<MessageHistoryItem[]> {
@@ -136,31 +178,6 @@ export const chatService = {
 
     if (!response.ok) {
       console.error('메시지 읽음 처리 실패');
-    }
-  },
-
-  subscribeToRoom(webSocket: WebSocket, roomPk: number): void {
-    if (webSocket.readyState === WebSocket.OPEN) {
-      const subscribeMessage = {
-        action: 'subscribe',
-        destination: `localhost:8080/topic/room.${roomPk}`
-      };
-      webSocket.send(JSON.stringify(subscribeMessage));
-      console.log(`채팅방 구독: localhost:8080/topic/room.${roomPk}`);
-    }
-  },
-
-  sendMessage(webSocket: WebSocket, roomPk: number, postPk: number, message: string): void {
-    if (webSocket.readyState === WebSocket.OPEN) {
-      const messageData = {
-        action: 'sendMessage',
-        destination: 'localhost:8080/api/chatting/sendMessage',
-        roomPk,
-        postPk,
-        message
-      };
-      webSocket.send(JSON.stringify(messageData));
-      console.log('메시지 전송:', messageData);
     }
   },
 

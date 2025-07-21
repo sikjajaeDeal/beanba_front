@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { chatService } from '@/services/chatService';
 import ChatList from './ChatList';
 import ProductChatWindow from './ProductChatWindow';
+import { Client } from '@stomp/stompjs';
 
 const ChatButton = () => {
   const [showChatList, setShowChatList] = useState(false);
@@ -16,7 +17,7 @@ const ChatButton = () => {
   const [selectedNickname, setSelectedNickname] = useState<string>('');
   const [selectedPostPk, setSelectedPostPk] = useState<number | null>(null);
   const [selectedMemberPk, setSelectedMemberPk] = useState<number | null>(null);
-  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+  const [stompClient, setStompClient] = useState<Client | null>(null);
   const { isLoggedIn, memberInfo } = useAuth();
   const { toast } = useToast();
 
@@ -44,9 +45,9 @@ const ChatButton = () => {
       setSelectedPostPk(postPk);
       setSelectedMemberPk(memberPk);
       
-      // 웹소켓 연결 - memberPk 사용
-      const ws = await chatService.connectWebSocket(memberPk);
-      setWebSocket(ws);
+      // STOMP 클라이언트 생성 및 연결
+      const client = await chatService.createStompClient(memberPk);
+      setStompClient(client);
       
       setShowChatList(false);
       setShowChatWindow(true);
@@ -64,9 +65,9 @@ const ChatButton = () => {
   const handleBackToList = () => {
     setShowChatWindow(false);
     setShowChatList(true);
-    if (webSocket) {
-      webSocket.close();
-      setWebSocket(null);
+    if (stompClient) {
+      stompClient.deactivate();
+      setStompClient(null);
     }
   };
 
@@ -78,9 +79,9 @@ const ChatButton = () => {
     setSelectedNickname('');
     setSelectedPostPk(null);
     setSelectedMemberPk(null);
-    if (webSocket) {
-      webSocket.close();
-      setWebSocket(null);
+    if (stompClient) {
+      stompClient.deactivate();
+      setStompClient(null);
     }
   };
 
@@ -108,11 +109,12 @@ const ChatButton = () => {
           isOpen={showChatWindow}
           onClose={handleCloseAll}
           roomPk={selectedRoomPk}
-          memberPk={selectedChatWith}
+          memberPk={selectedMemberPk}
+          chatWith={selectedChatWith}
           postPk={selectedPostPk}
           productTitle=""
           sellerName={selectedNickname}
-          webSocket={webSocket}
+          stompClient={stompClient}
         />
       )}
     </>

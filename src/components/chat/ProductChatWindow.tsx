@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { chatService } from '@/services/chatService';
 import { useAuth } from '@/contexts/AuthContext';
+import { Client } from '@stomp/stompjs';
 
 interface ChatMessage {
   id: string;
@@ -19,10 +20,11 @@ interface ProductChatWindowProps {
   onClose: () => void;
   roomPk: number;
   memberPk: number;
+  chatWith: number;
   postPk: number;
   productTitle: string;
   sellerName: string;
-  webSocket: WebSocket | null;
+  stompClient: Client | null;
 }
 
 const ProductChatWindow = ({ 
@@ -30,10 +32,11 @@ const ProductChatWindow = ({
   onClose, 
   roomPk, 
   memberPk, 
+  chatWith,
   postPk,
   productTitle, 
   sellerName,
-  webSocket 
+  stompClient 
 }: ProductChatWindowProps) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -41,60 +44,66 @@ const ProductChatWindow = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { memberInfo } = useAuth();
 
-  // 웹소켓 메시지 처리
+  // 시간 포맷팅 함수
+  const formatMessageTime = (messageAt: string): string => {
+    const date = new Date(messageAt);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  };
+
+  // STOMP 메시지 처리 및 구독
   useEffect(() => {
-    if (webSocket && memberInfo) {
-      webSocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('웹소켓 메시지 수신:', data);
+    if (stompClient && stompClient.connected && memberInfo) {
+      const handleMessage = (data: any) => {
+        console.log('구독으로 받은 메시지:', data);
+        
+        if (data.from && data.message && data.messageAt && data.memberPkFrom !== undefined) {
+          const newMessage: ChatMessage = {
+            id: Date.now().toString(),
+            text: data.message,
+            time: formatMessageTime(data.messageAt),
+            isOwn: data.memberPkFrom !== chatWith,
+            senderName: data.from
+          };
           
-          // 구독을 통해 받은 메시지 처리
-          if (data.from && data.message && data.messageAt) {
-            const newMessage: ChatMessage = {
-              id: Date.now().toString(),
-              text: data.message,
-              time: chatService.formatMessageTime(data.messageAt),
-              isOwn: data.memberPkFrom !== memberPk,
-              senderName: data.from
-            };
-            setMessages(prev => [...prev, newMessage]);
-            
-            // 메시지 읽음 처리
-            chatService.markMessageAsRead(roomPk);
-          }
-        } catch (error) {
-          console.error('메시지 파싱 오류:', error);
+          setMessages(prev => [...prev, newMessage]);
+          
+          // 메시지 읽음 처리
+          handleMarkAsRead();
         }
       };
-    }
-  }, [webSocket, memberPk, roomPk, memberInfo]);
 
-  // 채팅방 초기화 (구독 및 과거 메시지 로드)
+      chatService.subscribeToRoom(stompClient, roomPk, handleMessage);
+    }
+  }, [stompClient, roomPk, chatWith, memberInfo]);
+
+  // 채팅방 초기화
   useEffect(() => {
-    if (isOpen && webSocket && roomPk && memberInfo) {
+    if (isOpen && stompClient && stompClient.connected && roomPk && memberInfo) {
       initializeChatRoom();
     }
-  }, [isOpen, webSocket, roomPk, memberInfo]);
+  }, [isOpen, stompClient, roomPk, memberInfo]);
 
   const initializeChatRoom = async () => {
-    if (!webSocket || !memberInfo) return;
+    if (!stompClient || !memberInfo) return;
 
     try {
       setIsLoading(true);
       
-      // 1. 채팅방 구독
-      chatService.subscribeToRoom(webSocket, roomPk);
-      
-      // 2. 과거 메시지 기록 가져오기
-      const messageHistory = await chatService.getMessageHistory(roomPk);
+      // 과거 메시지 기록 가져오기
+      const messageHistory = await getMessageHistory();
       
       if (messageHistory && messageHistory.length > 0) {
         const historyMessages: ChatMessage[] = messageHistory.map(msg => ({
           id: msg.messagePk.toString(),
           text: msg.message,
-          time: chatService.formatMessageTime(msg.messageAt),
-          isOwn: msg.memberPkFrom === Number(memberInfo.memberId),
+          time: formatMessageTime(msg.messageAt),
+          isOwn: msg.memberPkFrom !== chatWith,
           senderName: msg.memberNameFrom
         }));
         
@@ -108,16 +117,75 @@ const ProductChatWindow = ({
     }
   };
 
+  // 과거 메시지 기록 가져오기
+  const getMessageHistory = async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const response = await fetch(`http://localhost:8080/api/chatting/getMessageList?roomPk=${roomPk}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('메시지 기록을 가져오는데 실패했습니다.');
+      }
+
+      const data = await response.json();
+      return data || [];
+    } catch (error) {
+      console.error('메시지 기록 가져오기 오류:', error);
+      return [];
+    }
+  };
+
+  // 메시지 읽음 처리
+  const handleMarkAsRead = async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
+
+      const response = await fetch(`http://localhost:8080/messageRead/${roomPk}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('메시지 읽음 처리 실패');
+      }
+    } catch (error) {
+      console.error('메시지 읽음 처리 오류:', error);
+    }
+  };
+
   // 메시지 자동 스크롤
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // STOMP를 통한 메시지 전송
   const handleSendMessage = () => {
-    if (message.trim() && webSocket && webSocket.readyState === WebSocket.OPEN) {
-      // 웹소켓을 통해 메시지 전송
-      chatService.sendMessage(webSocket, roomPk, postPk, message);
+    if (message.trim() && stompClient && stompClient.connected) {
+      console.log('메시지 전송 시도:', { roomPk, postPk, message: message.trim() });
+      console.log('STOMP 클라이언트 상태:', stompClient.connected);
+      
+      chatService.sendMessage(stompClient, roomPk, postPk, message.trim());
+      console.log('메시지 전송 완료');
+      
       setMessage('');
+    } else {
+      console.log('메시지 전송 실패 - 조건 체크:', {
+        messageEmpty: !message.trim(),
+        stompClientNull: !stompClient,
+        stompClientConnected: stompClient?.connected
+      });
     }
   };
 
@@ -207,7 +275,7 @@ const ProductChatWindow = ({
                 onClick={handleSendMessage}
                 size="sm"
                 className="bg-green-600 hover:bg-green-700"
-                disabled={!message.trim() || !webSocket || webSocket.readyState !== WebSocket.OPEN || isLoading}
+                disabled={!message.trim() || !stompClient || !stompClient.connected || isLoading}
               >
                 <Send className="h-4 w-4" />
               </Button>
