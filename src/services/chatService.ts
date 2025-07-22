@@ -77,6 +77,28 @@ export const chatService = {
     return data || [];
   },
 
+  async getChattingRoomListByPostPk(postPk: number): Promise<ChattingRoomListItem[]> {
+    const accessToken = authService.getAccessToken();
+    
+    if (!accessToken) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const response = await fetch(`http://localhost:8080/api/chatting/getChattingRoomListByPostPk?postPk=${postPk}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('상품별 채팅방 리스트를 가져오는데 실패했습니다.');
+    }
+
+    const data = await response.json();
+    return data || [];
+  },
+
   createStompClient(memberPk: number): Promise<Client> {
     return new Promise((resolve, reject) => {
       const client = new Client({
