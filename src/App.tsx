@@ -39,8 +39,7 @@ const App = () => (
             <Route path="/my-posts" element={<MyPosts />} />
             <Route path="/search" element={<Search />} />
             <Route path="/signup/verify" element={<SignupVerify />} />
-            <Route path="/login/oauth2/code/kakao" element={<SocialCallback />} />
-            <Route path="/login/oauth2/code/google" element={<SocialCallback />} />
+            <Route path="/oauth2/callback" element={<SocialCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatButton />
